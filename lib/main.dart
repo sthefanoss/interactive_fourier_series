@@ -1,10 +1,16 @@
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import './pages/calculator.dart';
+import 'package:ifs/pages/calculator_result.dart';
+import './pages/calculator_input.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'pages/info.dart';
+import 'pages/home.dart';
+import 'strings/constants.dart';
 
-void main() => runApp(FlutterFourierSeries());
+void main() {
+  runApp(FlutterFourierSeries());
+}
 
 class FlutterFourierSeries extends StatelessWidget {
   @override
@@ -13,14 +19,24 @@ class FlutterFourierSeries extends StatelessWidget {
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: [
-        const Locale('en'),
-        const Locale('pt'),
-        // ... other locales the app supports
+        const Locale('en'), // English
+        const Locale('pt'), // Hebrew
       ],
-      theme: ThemeData(),
-      home: CalculatorPage(),
+      title: 'Fourier App',
+      theme: ThemeData(
+          primaryColor: Colors.blueGrey,
+          accentColor: Colors.black,
+          cursorColor: Colors.grey,
+          focusColor: Colors.grey),
+      routes: {
+        '/': (ctx) => HomePage(),
+        '/calc-input': (ctx) => CalculatorInputPage(),
+        '/calc-result': (ctx) => CalculatorResultPage(),
+        '/info': (ctx) => InfoPage(),
+      },
     );
   }
 }

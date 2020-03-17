@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/cupertino.dart';
+import '../strings/constants.dart';
 class TexLoadingWidget extends StatelessWidget {
-  TexLoadingWidget({this.text = "Renderizando Texto.\nAguarde, por favor.",this.height = 300});
+  TexLoadingWidget({this.text,this.height = 300});
   final String text;
   final double height;
   @override
   Widget build(BuildContext context) {
+    final _language = getLocationCode(context);
     return Center(
       child: Container(
         height: height,
@@ -13,8 +15,8 @@ class TexLoadingWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            CircularProgressIndicator(),
-            Text(text),
+            CupertinoActivityIndicator(),
+            Text(text?? kWaitingForRenderingText[_language]),
           ],
         ),
       ),

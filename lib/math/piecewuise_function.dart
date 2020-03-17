@@ -1,4 +1,4 @@
-part of 'math.dart';
+import 'package:function_tree/function_tree.dart' as tree;
 
 class PiecewiseFunction {
   List<num> domainValues;
