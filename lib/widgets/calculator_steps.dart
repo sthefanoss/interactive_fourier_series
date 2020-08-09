@@ -27,9 +27,11 @@ class StepZero extends StatelessWidget {
           elevation: 2,
           clipBehavior: Clip.hardEdge,
           child: TeXView(
-            teXHTML: kDiscontinuitiesHintText[_language],
-            renderingEngine: RenderingEngine.MathJax,
-            loadingWidget: TexLoadingWidget(
+            child: TeXViewDocument(
+              kDiscontinuitiesHintText[_language],
+            ),
+            renderingEngine: TeXViewRenderingEngine.mathjax(),
+            loadingWidgetBuilder: (context) => TexLoadingWidget(
               height: 250,
             ),
           ),
@@ -89,9 +91,11 @@ class StepOne extends StatelessWidget {
           clipBehavior: Clip.hardEdge,
           elevation: 2,
           child: TeXView(
-            teXHTML: discontinuitiesHintText(expressionsCount, _language),
-            renderingEngine: RenderingEngine.MathJax,
-            loadingWidget: TexLoadingWidget(
+            child: TeXViewDocument(
+              discontinuitiesHintText(expressionsCount, _language),
+            ),
+            renderingEngine: TeXViewRenderingEngine.mathjax(),
+            loadingWidgetBuilder: (context) => TexLoadingWidget(
               height: 250,
             ),
           ),
@@ -158,14 +162,16 @@ class StepTwo extends StatelessWidget {
             elevation: 2,
             clipBehavior: Clip.hardEdge,
             child: TeXView(
-              teXHTML: piecesHintText(
-                  domainValues
-                      .map((discontinuities) =>
-                          discontinuities.toStringAsFixed(2))
-                      .toList(),
-                  _language),
-              renderingEngine: RenderingEngine.MathJax,
-              loadingWidget: TexLoadingWidget(
+              child: TeXViewDocument(
+                piecesHintText(
+                    domainValues
+                        .map((discontinuities) =>
+                            discontinuities.toStringAsFixed(2))
+                        .toList(),
+                    _language),
+              ),
+              renderingEngine: TeXViewRenderingEngine.mathjax(),
+              loadingWidgetBuilder: (context) => TexLoadingWidget(
                 height: 250,
               ),
             ),
@@ -232,14 +238,16 @@ class StepThree extends StatelessWidget {
           elevation: 2,
           clipBehavior: Clip.hardEdge,
           child: TeXView(
-            teXHTML: windowHintText(
-                piecewiseFunction.pieces.map((piece) => piece.tex).toList(),
-                piecewiseFunction.domainValues
-                    .map((discontinuity) => discontinuity.toStringAsFixed(2))
-                    .toList(),
-                _language),
-            renderingEngine: RenderingEngine.MathJax,
-            loadingWidget: TexLoadingWidget(height: 250),
+            child: TeXViewDocument(
+              windowHintText(
+                  piecewiseFunction.pieces.map((piece) => piece.tex).toList(),
+                  piecewiseFunction.domainValues
+                      .map((discontinuity) => discontinuity.toStringAsFixed(2))
+                      .toList(),
+                  _language),
+            ),
+            renderingEngine: TeXViewRenderingEngine.mathjax(),
+            loadingWidgetBuilder: (context) => TexLoadingWidget(height: 250),
           ),
         ),
         Card(

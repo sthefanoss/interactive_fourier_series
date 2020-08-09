@@ -159,19 +159,21 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                         elevation: 2,
                         clipBehavior: Clip.hardEdge,
                         child: TeXView(
-                          teXHTML: fourierSeriesResultText(
-                              discontinuities: _piecewiseFunction.domainValues
-                                  .map((v) => v.toStringAsFixed(2))
-                                  .toList(),
-                              expressions: _piecewiseFunction.pieces
-                                  .map((f) => f.tex)
-                                  .toList(),
-                              start: _start,
-                              end: _end,
-                              rmsValue: _trigonometricFourierSeries.rms,
-                              language: _language),
-                          renderingEngine: RenderingEngine.MathJax,
-                          loadingWidget: TexLoadingWidget(
+                          child: TeXViewDocument(
+                            fourierSeriesResultText(
+                                discontinuities: _piecewiseFunction.domainValues
+                                    .map((v) => v.toStringAsFixed(2))
+                                    .toList(),
+                                expressions: _piecewiseFunction.pieces
+                                    .map((f) => f.tex)
+                                    .toList(),
+                                start: _start,
+                                end: _end,
+                                rmsValue: _trigonometricFourierSeries.rms,
+                                language: _language),
+                          ),
+                          renderingEngine: TeXViewRenderingEngine.mathjax(),
+                          loadingWidgetBuilder: (context) => TexLoadingWidget(
                             height: (200 +
                                     _piecewiseFunction.domainValues.length * 10)
                                 .toDouble(),

@@ -27,9 +27,9 @@ class HomePage extends StatelessWidget {
               padding:
                   const EdgeInsets.only(top: 8, bottom: 24, left: 8, right: 8),
               child: TeXView(
-                teXHTML: kIntroText[_language],
-                renderingEngine: RenderingEngine.MathJax,
-                loadingWidget:
+                child: TeXViewDocument(kIntroText[_language]),
+                renderingEngine: TeXViewRenderingEngine.mathjax(),
+                loadingWidgetBuilder: (context) =>
                     TexLoadingWidget(text: kRenderingIntroductionText[_language]),
               ),
             ),
