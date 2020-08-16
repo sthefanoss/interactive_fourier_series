@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_tex/flutter_tex.dart';
-import 'package:ifs/math/piecewuise_function.dart';
+import 'package:ifs/math/piecewise_function.dart';
 import 'package:ifs/strings/constants.dart';
 import '../strings/regular_expressions.dart';
 import './../widgets/radio_text.dart';
@@ -240,8 +240,8 @@ class StepThree extends StatelessWidget {
           child: TeXView(
             child: TeXViewDocument(
               windowHintText(
-                  piecewiseFunction.pieces.map((piece) => piece.tex).toList(),
-                  piecewiseFunction.domainValues
+                  piecewiseFunction.expressions.map((piece) => piece.tex).toList(),
+                  piecewiseFunction.discontinuities
                       .map((discontinuity) => discontinuity.toStringAsFixed(2))
                       .toList(),
                   _language),

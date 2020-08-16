@@ -1,93 +1,166 @@
-import 'piecewuise_function.dart';
 import 'dart:math';
+import 'package:ifs/math/piecewise_function.dart';
 
-class TrigonometricFourierSeries {
-  TrigonometricFourierSeries(PiecewiseFunction function,
-      {int numberOfTerms = 20,
-      double start = -pi / 2,
-      double end = pi / 2,
-      int numberOfPoints = 100000})
-      : a = List<double>(numberOfTerms + 1),
-        b = List<double>(numberOfTerms + 1),
-        c = List<double>(numberOfTerms + 1),
-        omega = List<double>(numberOfTerms + 1),
-        period = (end - start),
-        mean = (end + start) / 2 {
-    a[0] = 0;
-    b[0] = 0;
-    c[0] = 0;
-    omega[0] = 0;
-    double dt = period / (numberOfPoints - 1);
-    final imageAndDomain = List<Point<double>>(numberOfPoints);
-    for (int i = 0; i < numberOfPoints; i++) {
-      double t = start + dt * i, y = function.at(t);
-      imageAndDomain[i] = Point<double>(t, y);
-      a[0] += y;
+class FourierSeries {
+  final double period;
+  final double frequency;
+  final double angularFrequency;
+  final double rootMeanSquare;
+  final double higherAmplitude;
+  final List<double> sineCoefficients;
+  final List<double> cosineCoefficients;
+  final List<double> amplitudeCoefficients;
+  final List<double> phaseCoefficients;
+
+  const FourierSeries({
+    this.period,
+    this.rootMeanSquare,
+    this.higherAmplitude,
+    this.sineCoefficients,
+    this.cosineCoefficients,
+    this.amplitudeCoefficients,
+    this.phaseCoefficients,
+  })  : frequency = 1 / period,
+        angularFrequency = 2 * pi / period;
+
+  factory FourierSeries.evaluate(
+    PiecewiseFunction function, {
+    int numberOfTerms = 20,
+    double start = -pi / 2,
+    double end = pi / 2,
+    int numberOfPoints = 100000,
+  }) {
+    final functionPoints = function.discretize(
+      start: start,
+      end: end,
+      length: numberOfPoints,
+    );
+
+    final coefficients = _evaluateCoefficients(
+      numberOfTerms: numberOfTerms,
+      functionPoints: functionPoints,
+    );
+
+    final rootMeanSquare = _evaluateRootMeanSquare(
+      amplitudeCoefficients: coefficients[2],
+    );
+
+    final higherAmplitude = _evaluateHigherAmplitude(
+      amplitudeCoefficients: coefficients[2],
+    );
+
+    return FourierSeries(
+      sineCoefficients: coefficients[0],
+      cosineCoefficients: coefficients[1],
+      amplitudeCoefficients: coefficients[2],
+      phaseCoefficients: coefficients[3],
+      period: end - start,
+      rootMeanSquare: rootMeanSquare,
+      higherAmplitude: higherAmplitude,
+    );
+  }
+
+  static List<List<double>> _evaluateCoefficients({
+    int numberOfTerms,
+    List<Point<double>> functionPoints,
+  }) {
+    final sineCoefficients = List<double>(numberOfTerms + 1);
+    final cosineCoefficients = List<double>(numberOfTerms + 1);
+    final amplitudeCoefficients = List<double>(numberOfTerms + 1);
+    final phaseCoefficients = List<double>(numberOfTerms + 1);
+
+    ///numeric integration for sine and cosine coefficients evaluation
+    final double dx = functionPoints[1].x - functionPoints[0].x;
+    final double period = (functionPoints.last.x - functionPoints.first.x);
+    for (int index = 0; index <= numberOfTerms; index++) {
+      double nPiL = index * pi * 2 / period;
+      cosineCoefficients[index] = 0;
+      sineCoefficients[index] = 0;
+
+      functionPoints.forEach((point) {
+        double arc = nPiL * point.x;
+        cosineCoefficients[index] += point.y * cos(arc);
+        sineCoefficients[index] += point.y * sin(arc);
+      });
+
+      cosineCoefficients[index] *= 2 * dx / period;
+      sineCoefficients[index] *= 2 * dx / period;
     }
-    a[0] *= dt * 2 / period;
-    c[0] = a[0].abs();
-    omega[0] = atan2(0, a[0]);
-    for (int n = 1; n <= numberOfTerms; n++) {
-      double nPiL = n * pi * 2 / period;
-      a[n] = 0;
-      b[n] = 0;
-      for (int i = 0; i < numberOfPoints; i++) {
-        double arc = nPiL * imageAndDomain[i].x;
-        a[n] += imageAndDomain[i].y * cos(arc);
-        b[n] += imageAndDomain[i].y * sin(arc);
-      }
-      a[n] *= 2 * dt / period;
-      b[n] *= 2 * dt / period;
-      c[n] = sqrt(pow(a[n], 2) + pow(b[n], 2));
-      omega[n] = atan2(b[n], a[n]);
+
+    ///amplitude and phase coefficients evaluation
+    for (int index = 0; index <= numberOfTerms; index++) {
+      amplitudeCoefficients[index] = sqrt(
+        cosineCoefficients[index] * cosineCoefficients[index] +
+            sineCoefficients[index] * sineCoefficients[index],
+      );
+      phaseCoefficients[index] =
+          atan2(sineCoefficients[index], cosineCoefficients[index]);
     }
-    _setMaxTerm();
-    //  _setZeroes();
-    _setRMS();
+
+    return [
+      sineCoefficients,
+      cosineCoefficients,
+      amplitudeCoefficients,
+      phaseCoefficients
+    ];
   }
 
-  static TrigonometricFourierSeries make(List args) =>
-      TrigonometricFourierSeries(args[0],
-          start: args[1],
-          end: args[2],
-          numberOfTerms: 100,
-          numberOfPoints: 100000);
+  static double _evaluateRootMeanSquare({
+    List<double> amplitudeCoefficients,
+  }) {
+    ///functional amplitude sum
+    double amplitudeSum = amplitudeCoefficients.fold(
+      0,
+      (previousValue, element) {
+        return previousValue + element;
+      },
+    );
+    return sqrt(amplitudeSum / 2);
+  }
 
-  double at(double domain, [int end, int start = 0]) {
-    if (end == null) end = a.length - 1;
-    double sum = 0, kAngularFrequency = angularFrequency * domain;
-    if (start == 0) {
-      sum = a[0] / 2;
-      start++;
+  static double _evaluateHigherAmplitude({
+    List<double> amplitudeCoefficients,
+  }) {
+    return amplitudeCoefficients.fold(
+        0,
+        (previousValue, element) => element.abs() > previousValue.abs()
+            ? element.abs()
+            : previousValue.abs());
+  }
+
+  List<Point<double>> discretize({
+    double start,
+    double end,
+    int length,
+    int lowerCutoffIndex,
+    int higherCutoffIndex,
+  }) {
+    final functionCalls = List<Point<double>>(length);
+    final double dx = (end - start) / (length - 1);
+
+    for (int index = 0; index < length; index++) {
+      double x = start + dx * index;
+      functionCalls[index] = call(
+        x,
+        lowerCutoffIndex: lowerCutoffIndex,
+        higherCutoffIndex: higherCutoffIndex,
+      );
     }
-    for (int n = start; n <= end; n++)
-      //sum += c[n] * cos(n * kAngularFrequency - omega[n]);
-      sum +=
-          a[n] * cos(n * kAngularFrequency) + b[n] * sin(n * kAngularFrequency);
-    return sum;
+    return functionCalls;
   }
 
-  final List<double> a, b, c, omega;
-  final double period, mean;
-  double get angularFrequency => 2 * pi / period;
-  double get frequency => 1 / period;
-  double _maxTerm, _rms;
-  double get maxTerm => _maxTerm;
-  double get rms => _rms;
-
-  void _setMaxTerm() {
-    double max = 0;
-    for (int i = 0; i < c.length; i++) if (c[i].abs() > max) max = c[i];
-    _maxTerm = max;
-  }
-
-  void _setRMS() {
-    _rms = 0;
-    for (int i = 1; i < a.length; i++) _rms += a[i] * a[i] + b[i] * b[i];
-    _rms = sqrt(_rms / 2 + a[0] * a[0]);
-  }
-
-  void _setZeroes() {
-    for (int i = 0; i < a.length; i++) if (c[i] / _maxTerm < 1E-3) omega[i] = 0;
+  Point<double> call(double x, {int lowerCutoffIndex, int higherCutoffIndex}) {
+    lowerCutoffIndex = lowerCutoffIndex ?? 0;
+    higherCutoffIndex = higherCutoffIndex ?? amplitudeCoefficients.length - 1;
+    double sum = 0;
+    double arc = angularFrequency * x;
+    if (lowerCutoffIndex == 0) {
+      sum = cosineCoefficients[0] / 2;
+      lowerCutoffIndex++;
+    }
+    for (int index = lowerCutoffIndex; index <= higherCutoffIndex; index++)
+      sum += cosineCoefficients[index] * cos(index * arc) +
+          sineCoefficients[index] * sin(index * arc);
+    return Point(x, sum);
   }
 }

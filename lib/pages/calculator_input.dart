@@ -5,7 +5,7 @@ import 'package:ifs/widgets/change_bounds_alert_dialog.dart';
 import 'dart:math';
 import 'package:function_tree/function_tree.dart' as tree;
 import 'package:fl_chart/fl_chart.dart';
-import '../math/piecewuise_function.dart';
+import '../math/piecewise_function.dart';
 import '../strings/constants.dart';
 import '../widgets/calculator_steps.dart';
 
@@ -16,7 +16,7 @@ class CalculatorInputPage extends StatefulWidget {
 
 class _CalculatorInputPageState extends State<CalculatorInputPage> {
   ///general
-  final PiecewiseFunction _piecewiseFunction = PiecewiseFunction();
+  PiecewiseFunction _piecewiseFunction = PiecewiseFunction();
   int _stepIndex = 0;
   bool _init = true;
   String _language;
@@ -107,7 +107,7 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
                 formOneTextControllers: _discontinuitiesControllers,
                 validator: (value, index) {
                   try {
-                    _piecewiseFunction.domainValues[index] =
+                    _piecewiseFunction.discontinuities[index] =
                         value.interpret().toDouble();
                     return null;
                   } catch (e) {
@@ -125,14 +125,14 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
                   formTwoKey: _formTwoKey,
                   validator: (value, index) {
                     try {
-                      _piecewiseFunction.pieces[index] =
+                      _piecewiseFunction.expressions[index] =
                           value.toSingleVariableFunction('t');
                       return null;
                     } catch (e) {
                       return kInvalidTExpressionText[_language];
                     }
                   },
-                  domainValues: _piecewiseFunction.domainValues,
+                  domainValues: _piecewiseFunction.discontinuities,
                   formTwoTextControllers: _piecesControllers,
                 )),
             customStep(
@@ -176,10 +176,10 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
   void _setPiecesNumber(int value) {
     setState(() {
       _piecesCount = value;
-      _piecewiseFunction.pieces =
-          List<tree.SingleVariableFunction>(_piecesCount);
-      _piecewiseFunction.domainValues = List<double>(_piecesCount - 1);
-
+      _piecewiseFunction = PiecewiseFunction(
+        expressions: List<tree.SingleVariableFunction>(_piecesCount),
+        discontinuities: List<double>(_piecesCount - 1),
+      );
       if (_piecesCount == 1) {
         _discontinuitiesControllers = null;
         _piecesControllers = [TextEditingController(text: '')];
@@ -212,8 +212,8 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
           if (_formOneKey.currentState.validate()) {
             for (int i = 0; i < _discontinuitiesControllers.length; i++)
               for (int j = i + 1; j < _discontinuitiesControllers.length; j++)
-                if (_piecewiseFunction.domainValues[i] >
-                    _piecewiseFunction.domainValues[j]) {
+                if (_piecewiseFunction.discontinuities[i] >
+                    _piecewiseFunction.discontinuities[j]) {
                   showDialog(
                       context: context,
                       builder: (BuildContext context) => AlertDialog(
@@ -249,18 +249,17 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
   }
 
   void _updateChartData([int numberOfPoints = 1024]) {
-    _maxY = 0;
-    double dt = (_boundsRangeValues.end - _boundsRangeValues.start) /
-        (numberOfPoints - 1);
-    final newChartData = List<FlSpot>(numberOfPoints);
-    for (int i = 0; i < numberOfPoints; i++) {
-      double t = _boundsRangeValues.start + dt * i,
-          y = _piecewiseFunction.at(t);
-      newChartData[i] = FlSpot(t, y);
-      if (y.abs() > _maxY) _maxY = y.abs();
-    }
-    _maxY = 1.25 * _maxY;
-    _chartData = newChartData;
+    final plotData = _piecewiseFunction.discretize(
+        start: _boundsRangeValues.start,
+        end: _boundsRangeValues.end,
+        length: numberOfPoints);
+    _maxY = 1.25 *
+        plotData.fold(
+            0,
+            (previousValue, element) => previousValue.abs() > element.y.abs()
+                ? previousValue.abs()
+                : element.y.abs());
+    _chartData = plotData.map((e) => FlSpot(e.x, e.y)).toList();
   }
 
   void _onStepCancel() {

@@ -8,8 +8,12 @@ import '../strings/constants.dart';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import '../math/fourier_series.dart';
-import '../math/piecewuise_function.dart';
+import '../math/piecewise_function.dart';
 import '../widgets/text_loading_widget.dart';
+
+extension psdfsdf on Point {
+  FlSpot get toSpot => FlSpot(this.x, this.y);
+}
 
 enum SpectrumMode { Trigonometric, Polar }
 enum SpectrumView { First, Second, Both }
@@ -21,7 +25,7 @@ class CalculatorResultPage extends StatefulWidget {
 
 class _CalculatorResultPageState extends State<CalculatorResultPage> {
   String _language;
-  TrigonometricFourierSeries _trigonometricFourierSeries;
+  FourierSeries _trigonometricFourierSeries;
   SpectrumMode _spectrumMode = SpectrumMode.Trigonometric;
   SpectrumView _spectrumView = SpectrumView.Both;
   PiecewiseFunction _piecewiseFunction;
@@ -37,6 +41,11 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       _cData,
       _omegaData;
 
+  static FourierSeries _compute(List args) {
+    return FourierSeries.evaluate(args[0],
+        start: args[1], end: args[2], numberOfTerms: 200);
+  }
+
   @override
   Future<void> didChangeDependencies() async {
     if (_init) {
@@ -46,20 +55,19 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       _start = _domainRepresentation.start;
       _end = _domainRepresentation.end;
       _piecewiseFunction = data[1];
+
       _trigonometricFourierSeries =
-          await compute<List, TrigonometricFourierSeries>(
-              TrigonometricFourierSeries.make,
-              [_piecewiseFunction, _start, _end]);
+          await compute(_compute, [_piecewiseFunction, _start, _end]);
       _harmonicFilter = RangeValues(
-          0, (_trigonometricFourierSeries.a.length - 1).floorToDouble());
-      _functionData = List<FlSpot>(_numberOfPoints);
+          0,
+          (_trigonometricFourierSeries.cosineCoefficients.length - 1)
+              .floorToDouble());
       double meanPoint = (_start + _end) / 2, period = -_start + _end;
       _chartStart = meanPoint - period * 1.5;
       _dt = (3 * period) / (_numberOfPoints - 1);
-      for (int i = 0; i < _numberOfPoints; i++) {
-        double t = _chartStart + _dt * i, y = _piecewiseFunction.at(t);
-        _functionData[i] = FlSpot(t, y);
-      }
+      final evalFunctData =
+          _piecewiseFunction.discretize(start: _start, end: _end, length: 1024);
+      _functionData = evalFunctData.map((e) => FlSpot(e.x, e.y)).toList();
       _seriesData = List<FlSpot>(_numberOfPoints);
       _aData = List<FlSpot>();
       _bData = List<FlSpot>();
@@ -67,12 +75,15 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       _omegaData = List<FlSpot>();
       _filteredSeriesData = List<FlSpot>(_numberOfPoints);
       for (int i = 0; i < _numberOfPoints; i++) {
-        _seriesData[i] = FlSpot(_functionData[i].x,
-            _trigonometricFourierSeries.at(_functionData[i].x));
-        _filteredSeriesData[i] = FlSpot(
-            _functionData[i].x,
-            _trigonometricFourierSeries.at(_functionData[i].x,
-                _harmonicFilter.end.round(), _harmonicFilter.start.round()));
+        _seriesData[i] =
+            _trigonometricFourierSeries.call(_functionData[i].x).toSpot;
+        _filteredSeriesData[i] = _trigonometricFourierSeries
+            .call(
+              _functionData[i].x,
+              higherCutoffIndex: _harmonicFilter.end.round(),
+              lowerCutoffIndex: _harmonicFilter.start.round(),
+            )
+            .toSpot;
       }
       //find max |Y|
       _maxY = 0;
@@ -82,27 +93,35 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       }
       _maxY = 1.25 * _maxY;
       double termLength = 0.5, termOffset = 1, count = 0;
-      for (int n = 0; n < _trigonometricFourierSeries.a.length; n++) {
+      for (int n = 0;
+          n < _trigonometricFourierSeries.cosineCoefficients.length;
+          n++) {
         _aData.add(FlSpot(count, 0.0));
         _bData.add(FlSpot(count, 0.0));
         _cData.add(FlSpot(count, 0.0));
         _omegaData.add(FlSpot(count, 0.0));
-        _aData.add(FlSpot(count, _trigonometricFourierSeries.a[n]));
-        _bData.add(FlSpot(count, _trigonometricFourierSeries.b[n]));
-        _cData.add(FlSpot(count, _trigonometricFourierSeries.c[n]));
+        _aData.add(
+            FlSpot(count, _trigonometricFourierSeries.cosineCoefficients[n]));
+        _bData.add(
+            FlSpot(count, _trigonometricFourierSeries.sineCoefficients[n]));
+        _cData.add(FlSpot(
+            count, _trigonometricFourierSeries.amplitudeCoefficients[n]));
         _omegaData.add(FlSpot(
             count,
-            _trigonometricFourierSeries.omega[n] *
-                _trigonometricFourierSeries.maxTerm /
+            _trigonometricFourierSeries.phaseCoefficients[n] *
+                _trigonometricFourierSeries.higherAmplitude /
                 pi));
         count += termLength;
-        _aData.add(FlSpot(count, _trigonometricFourierSeries.a[n]));
-        _bData.add(FlSpot(count, _trigonometricFourierSeries.b[n]));
-        _cData.add(FlSpot(count, _trigonometricFourierSeries.c[n]));
+        _aData.add(
+            FlSpot(count, _trigonometricFourierSeries.cosineCoefficients[n]));
+        _bData.add(
+            FlSpot(count, _trigonometricFourierSeries.sineCoefficients[n]));
+        _cData.add(FlSpot(
+            count, _trigonometricFourierSeries.amplitudeCoefficients[n]));
         _omegaData.add(FlSpot(
             count,
-            _trigonometricFourierSeries.omega[n] *
-                _trigonometricFourierSeries.maxTerm /
+            _trigonometricFourierSeries.phaseCoefficients[n] *
+                _trigonometricFourierSeries.higherAmplitude /
                 pi));
         _aData.add(FlSpot(count, 0.0));
         _bData.add(FlSpot(count, 0.0));
@@ -161,21 +180,24 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                         child: TeXView(
                           child: TeXViewDocument(
                             fourierSeriesResultText(
-                                discontinuities: _piecewiseFunction.domainValues
+                                discontinuities: _piecewiseFunction
+                                    .discontinuities
                                     .map((v) => v.toStringAsFixed(2))
                                     .toList(),
-                                expressions: _piecewiseFunction.pieces
+                                expressions: _piecewiseFunction.expressions
                                     .map((f) => f.tex)
                                     .toList(),
                                 start: _start,
                                 end: _end,
-                                rmsValue: _trigonometricFourierSeries.rms,
+                                rmsValue:
+                                    _trigonometricFourierSeries.rootMeanSquare,
                                 language: _language),
                           ),
                           renderingEngine: TeXViewRenderingEngine.mathjax(),
                           loadingWidgetBuilder: (context) => TexLoadingWidget(
                             height: (200 +
-                                    _piecewiseFunction.domainValues.length * 10)
+                                    _piecewiseFunction.discontinuities.length *
+                                        10)
                                 .toDouble(),
                           ),
                         ),
@@ -316,11 +338,15 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                           activeColor: Colors.black,
                           inactiveColor: Colors.blueGrey,
                           min: 0,
-                          max: (_trigonometricFourierSeries.a.length - 1)
+                          max: (_trigonometricFourierSeries
+                                      .cosineCoefficients.length -
+                                  1)
                               .toDouble(),
                           values: _harmonicFilter,
                           labels: _labelGenerator(_harmonicFilter),
-                          divisions: (_trigonometricFourierSeries.a.length - 1),
+                          divisions: (_trigonometricFourierSeries
+                                  .cosineCoefficients.length -
+                              1),
                           onChanged: (value) => setState(() {
                             _harmonicFilter = value;
                           }),
@@ -362,14 +388,15 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                                                 for (int i = 0;
                                                     i <
                                                         _trigonometricFourierSeries
-                                                            .a.length;
+                                                            .cosineCoefficients
+                                                            .length;
                                                     i++)
                                                   Text(
-                                                      'A$i = ${_trigonometricFourierSeries.a[i].toStringAsFixed(3)}'
-                                                      '\nB$i = ${_trigonometricFourierSeries.b[i].toStringAsFixed(3)}'
-                                                      '\n|C|$i = ${_trigonometricFourierSeries.c[i].toStringAsFixed(3)}'
-                                                      '\n∠C$i = ${_trigonometricFourierSeries.omega[i].toStringAsFixed(3)} rad '
-                                                      '(${(_trigonometricFourierSeries.omega[i] * 180 / pi).toStringAsFixed(3)}°)\n')
+                                                      'A$i = ${_trigonometricFourierSeries.cosineCoefficients[i].toStringAsFixed(3)}'
+                                                      '\nB$i = ${_trigonometricFourierSeries.sineCoefficients[i].toStringAsFixed(3)}'
+                                                      '\n|C|$i = ${_trigonometricFourierSeries.amplitudeCoefficients[i].toStringAsFixed(3)}'
+                                                      '\n∠C$i = ${_trigonometricFourierSeries.phaseCoefficients[i].toStringAsFixed(3)} rad '
+                                                      '(${(_trigonometricFourierSeries.phaseCoefficients[i] * 180 / pi).toStringAsFixed(3)}°)\n')
                                               ],
                                             ),
                                           ),
@@ -429,8 +456,8 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                                   dotData: FlDotData(show: false),
                                   colors: [Colors.black.withOpacity(0.75)]),
                             ],
-                            minY: -_trigonometricFourierSeries.maxTerm,
-                            maxY: _trigonometricFourierSeries.maxTerm,
+                            minY: -_trigonometricFourierSeries.higherAmplitude,
+                            maxY: _trigonometricFourierSeries.higherAmplitude,
                           ),
                         ),
                       ),
@@ -480,17 +507,19 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
   }
 
   void _updateFilteredChart(RangeValues values) {
-    final newFilteredDataSeries = List<FlSpot>();
     int start = _harmonicFilter.start.toInt(),
         end = _harmonicFilter.end.toInt();
 
-    for (int i = 0; i < _numberOfPoints; i++) {
-      newFilteredDataSeries.add(FlSpot(_functionData[i].x,
-          _trigonometricFourierSeries.at(_functionData[i].x, end, start)));
-    }
+    final newFilteredDataSeries = _trigonometricFourierSeries.discretize(
+        start: _start,
+        end: _end,
+        length: 1024,
+        lowerCutoffIndex: start,
+        higherCutoffIndex: end);
 
     setState(() {
-      _filteredSeriesData = newFilteredDataSeries;
+      _filteredSeriesData =
+          newFilteredDataSeries.map((e) => FlSpot(e.x, e.y)).toList();
       _harmonicFilter = values;
     });
   }
