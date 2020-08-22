@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:function_tree/function_tree.dart' as tree;
+import 'package:ifs/math/linear_space.dart';
 
 class PiecewiseFunction {
   final List<double> discontinuities;
@@ -18,18 +19,7 @@ class PiecewiseFunction {
     return Point<double>(x, expressions[index].call(x).toDouble());
   }
 
-  List<Point<double>> discretize({
-    double start,
-    double end,
-    int length,
-  }) {
-    final functionCalls = List<Point<double>>(length);
-    final double dx = (end - start) / (length - 1);
-
-    for (int index = 0; index < length; index++) {
-      double x = start + dx * index;
-      functionCalls[index] = call(x);
-    }
-    return functionCalls;
+  List<Point<double>> callFromLinearSpace(LinearSpace space) {
+    return space.data.map<Point<double>>(call).toList();
   }
 }

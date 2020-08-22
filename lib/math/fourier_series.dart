@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:ifs/math/linear_space.dart';
 import 'package:ifs/math/piecewise_function.dart';
 
 class FourierSeries {
@@ -25,15 +26,11 @@ class FourierSeries {
 
   factory FourierSeries.evaluate(
     PiecewiseFunction function, {
+    LinearSpace representationSpace,
     int numberOfTerms = 20,
-    double start = -pi / 2,
-    double end = pi / 2,
-    int numberOfPoints = 100000,
   }) {
-    final functionPoints = function.discretize(
-      start: start,
-      end: end,
-      length: numberOfPoints,
+    final functionPoints = function.callFromLinearSpace(
+      representationSpace,
     );
 
     final coefficients = _evaluateCoefficients(
@@ -54,7 +51,7 @@ class FourierSeries {
       cosineCoefficients: coefficients[1],
       amplitudeCoefficients: coefficients[2],
       phaseCoefficients: coefficients[3],
-      period: end - start,
+      period: representationSpace.end - representationSpace.start,
       rootMeanSquare: rootMeanSquare,
       higherAmplitude: higherAmplitude,
     );
@@ -128,27 +125,6 @@ class FourierSeries {
             : previousValue.abs());
   }
 
-  List<Point<double>> discretize({
-    double start,
-    double end,
-    int length,
-    int lowerCutoffIndex,
-    int higherCutoffIndex,
-  }) {
-    final functionCalls = List<Point<double>>(length);
-    final double dx = (end - start) / (length - 1);
-
-    for (int index = 0; index < length; index++) {
-      double x = start + dx * index;
-      functionCalls[index] = call(
-        x,
-        lowerCutoffIndex: lowerCutoffIndex,
-        higherCutoffIndex: higherCutoffIndex,
-      );
-    }
-    return functionCalls;
-  }
-
   Point<double> call(double x, {int lowerCutoffIndex, int higherCutoffIndex}) {
     lowerCutoffIndex = lowerCutoffIndex ?? 0;
     higherCutoffIndex = higherCutoffIndex ?? amplitudeCoefficients.length - 1;
@@ -162,5 +138,19 @@ class FourierSeries {
       sum += cosineCoefficients[index] * cos(index * arc) +
           sineCoefficients[index] * sin(index * arc);
     return Point(x, sum);
+  }
+
+  List<Point<double>> callFromLinearSpace({
+    LinearSpace space,
+    int lowerCutoffIndex,
+    int higherCutoffIndex,
+  }) {
+    return space.data.map<Point<double>>(
+      (value) => call(
+        value,
+        lowerCutoffIndex: lowerCutoffIndex,
+        higherCutoffIndex: higherCutoffIndex,
+      ),
+    );
   }
 }
