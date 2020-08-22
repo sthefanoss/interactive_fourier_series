@@ -11,6 +11,16 @@ class PiecewiseFunction {
     this.expressions,
   });
 
+  PiecewiseFunction copyWith({
+    List<double> discontinuities,
+    List<tree.SingleVariableFunction> expressions,
+  }) {
+    return PiecewiseFunction(
+      discontinuities: discontinuities ?? this.discontinuities,
+      expressions: expressions ?? this.expressions,
+    );
+  }
+
   Point<double> call(double x) {
     int index;
     for (index = 0;
