@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_tex/flutter_tex.dart';
+import 'package:ifs/math/linear_space.dart';
 import '../strings/generators.dart';
 import '../strings/constants.dart';
 import 'dart:math';
@@ -24,6 +25,7 @@ class CalculatorResultPage extends StatefulWidget {
 }
 
 class _CalculatorResultPageState extends State<CalculatorResultPage> {
+  LinearSpace functionsSpace;
   String _language;
   FourierSeries _trigonometricFourierSeries;
   SpectrumMode _spectrumMode = SpectrumMode.Trigonometric;
@@ -42,8 +44,11 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       _omegaData;
 
   static FourierSeries _compute(List args) {
-    return FourierSeries.evaluate(args[0],
-        start: args[1], end: args[2], numberOfTerms: 200);
+    return FourierSeries.evaluate(
+      args[0],
+      representationSpace: args[1],
+      numberOfTerms: 50,
+    );
   }
 
   @override
@@ -51,13 +56,14 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
     if (_init) {
       _language = getLocationCode(context);
       final data = ModalRoute.of(context).settings.arguments as List;
-      final _domainRepresentation = data[0] as RangeValues;
-      _start = _domainRepresentation.start;
-      _end = _domainRepresentation.end;
+      _start = data[0][0];
+      _end = data[0][1];
       _piecewiseFunction = data[1];
 
-      _trigonometricFourierSeries =
-          await compute(_compute, [_piecewiseFunction, _start, _end]);
+      _trigonometricFourierSeries = await compute(_compute, [
+        _piecewiseFunction,
+        LinearSpace(start: _start, end: _end, length: 100000)
+      ]);
       _harmonicFilter = RangeValues(
           0,
           (_trigonometricFourierSeries.cosineCoefficients.length - 1)
@@ -65,8 +71,13 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
       double meanPoint = (_start + _end) / 2, period = -_start + _end;
       _chartStart = meanPoint - period * 1.5;
       _dt = (3 * period) / (_numberOfPoints - 1);
+      functionsSpace = LinearSpace(
+          start: meanPoint - _trigonometricFourierSeries.period,
+          end: meanPoint + _trigonometricFourierSeries.period,
+          length: 1024);
+
       final evalFunctData =
-          _piecewiseFunction.discretize(start: _start, end: _end, length: 1024);
+          _piecewiseFunction.callFromLinearSpace(functionsSpace);
       _functionData = evalFunctData.map((e) => FlSpot(e.x, e.y)).toList();
       _seriesData = List<FlSpot>(_numberOfPoints);
       _aData = List<FlSpot>();
@@ -510,12 +521,12 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
     int start = _harmonicFilter.start.toInt(),
         end = _harmonicFilter.end.toInt();
 
-    final newFilteredDataSeries = _trigonometricFourierSeries.discretize(
-        start: _start,
-        end: _end,
-        length: 1024,
-        lowerCutoffIndex: start,
-        higherCutoffIndex: end);
+    final newFilteredDataSeries =
+        _trigonometricFourierSeries.callFromLinearSpace(
+      space: functionsSpace,
+      lowerCutoffIndex: start,
+      higherCutoffIndex: end,
+    );
 
     setState(() {
       _filteredSeriesData =

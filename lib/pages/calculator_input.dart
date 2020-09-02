@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:ifs/widgets/change_bounds_alert_dialog.dart';
+import 'package:ifs/math/linear_space.dart';
 import 'dart:math';
 import 'package:function_tree/function_tree.dart' as tree;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:ifs/widgets/multi_slider.dart';
 import '../math/piecewise_function.dart';
-import '../strings/constants.dart';
-import '../widgets/calculator_steps.dart';
 
 class CalculatorInputPage extends StatefulWidget {
   @override
@@ -15,244 +14,227 @@ class CalculatorInputPage extends StatefulWidget {
 }
 
 class _CalculatorInputPageState extends State<CalculatorInputPage> {
+  static const maxPieces = 5;
+  static const minPieces = 1;
+
   ///general
-  PiecewiseFunction _piecewiseFunction = PiecewiseFunction();
-  int _stepIndex = 0;
-  bool _init = true;
-  String _language;
+  int _tabIndex = 0;
 
   ///step zero
-  int _piecesCount = 1, _lastPiecesCount = 0;
+  final List<TextEditingController> _piecesControllers = [
+    TextEditingController(text: '-sin(t)'),
+    TextEditingController(text: 'sin(t)'),
+  ];
+  final _formKey = GlobalKey<FormState>();
+  PiecewiseFunction _piecewiseFunction;
 
   ///step one
-  List<TextEditingController> _discontinuitiesControllers = [];
-  final _formOneKey = GlobalKey<FormState>();
+  List<double> values;
+  List<tree.SingleVariableFunction> _functions;
+  double maxChart = pi;
+  double minChart = -pi;
 
-  ///step two
-  List<TextEditingController> _piecesControllers = [TextEditingController()];
-  final _formTwoKey = GlobalKey<FormState>();
-
-  ///step tree
-  final List<TextEditingController> _windowLimitersControllers = [
-    TextEditingController(text: '-pi/2'),
-    TextEditingController(text: 'pi/2'),
-  ];
-  RangeValues _boundsRangeValues = RangeValues(-pi / 2, pi / 2);
-  RangeValues _selectorRangeValues = RangeValues(-pi / 2, pi / 2);
   List<FlSpot> _chartData;
   double _maxY;
 
   @override
-  void didChangeDependencies() {
-    if (_init) {
-      _language = getLocationCode(context);
-      setState(() {
-        _init = false;
-      });
-    }
-    super.didChangeDependencies();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(kCalculatorInputName[_language]),
-        centerTitle: true,
+      appBar: AppBar(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _tabIndex,
+        onTap: (int index) {
+          if (_tabIndex == index) return;
+
+          if (index == 0) {
+            setState(() {
+              _tabIndex = index;
+            });
+          } else {
+            if (!_formKey.currentState.validate()) return;
+
+            _tabIndex = index;
+
+            generateUserInput();
+            updateUserInput();
+            _updateChartData();
+
+            setState(() {});
+          }
+        },
+        items: [
+          BottomNavigationBarItem(
+            title: Text('Funcoes'),
+            icon: Text(
+              'x(t)',
+              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.pink),
+            ),
+          ),
+          BottomNavigationBarItem(
+            title: Text('Descontinuidades'),
+            icon: Icon(
+              Icons.show_chart,
+              color: Colors.pink,
+            ),
+          )
+        ],
       ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            FlatButton(
-              child: Text(kBackText[_language]),
-              onPressed: _stepIndex != 0 ? _onStepCancel : null,
-            ),
-            FlatButton(
-              child: Text(
-                kForwardText[_language],
-              ),
-              onPressed: _onStepContinue,
-            ),
-          ],
-        ),
-      ),
-      body: SafeArea(
-        child: Stepper(
-          currentStep: _stepIndex,
-          type: StepperType.horizontal,
-          onStepContinue: null,
-          onStepCancel: null,
-          controlsBuilder: (BuildContext context,
-                  {VoidCallback onStepContinue, VoidCallback onStepCancel}) =>
-              Container(),
-          steps: [
-            customStep(
-                title: kPiecesNumberText[_language],
-                stepIndex: 0,
-                stepGroup: _stepIndex,
-                content: StepZero(
-                  onChanged: (value) => setState(() {
-                    _piecesCount = value;
-                  }),
-                  expressionsCount: _piecesCount,
-                )),
-            customStep(
-              title: kDiscontinuitiesText[_language],
-              stepIndex: 1,
-              stepGroup: _stepIndex,
-              content: StepOne(
-                expressionsCount: _piecesCount,
-                formOneKey: _formOneKey,
-                formOneTextControllers: _discontinuitiesControllers,
-                validator: (value, index) {
-                  try {
-                    _piecewiseFunction.discontinuities[index] =
-                        value.interpret().toDouble();
-                    return null;
-                  } catch (e) {
-                    print(e);
-                    return kInvalidExpressionText[_language];
-                  }
-                },
-              ),
-            ),
-            customStep(
-                title: kPiecesOfFtText[_language],
-                stepIndex: 2,
-                stepGroup: _stepIndex,
-                content: StepTwo(
-                  formTwoKey: _formTwoKey,
-                  validator: (value, index) {
-                    try {
-                      _piecewiseFunction.expressions[index] =
-                          value.toSingleVariableFunction('t');
-                      return null;
-                    } catch (e) {
-                      return kInvalidTExpressionText[_language];
-                    }
-                  },
-                  domainValues: _piecewiseFunction.discontinuities,
-                  formTwoTextControllers: _piecesControllers,
-                )),
-            customStep(
-                title: kWindowingText[_language],
-                stepIndex: 3,
-                stepGroup: _stepIndex,
-                content: StepThree(
-                  maxY: _maxY,
-                  chartData: _chartData,
-                  changeLimiters: _changeBounds,
-                  limitersRangeValues: _boundsRangeValues,
-                  selectorRangeValues: _selectorRangeValues,
-                  onRangeValuesChanged: (values) => setState(() {
-                    _selectorRangeValues = values;
-                  }),
-                  piecewiseFunction: _piecewiseFunction,
-                )),
-          ],
+      body: Form(
+        key: _formKey,
+        child: SafeArea(
+          child: Column(
+            children: _tabIndex == 0 ? buildFirstPage() : buildSecondPage(),
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _changeBounds() async {
-    final key = GlobalKey<FormState>();
-    final newValues = await showDialog<RangeValues>(
-        context: context,
-        builder: (BuildContext context) => ChangeBoundsAlertDialog(
-              controllers: _windowLimitersControllers,
-              formKey: key,
+  List<Widget> buildFirstPage() {
+    return [
+      for (int index = 0; index < _piecesControllers.length; index++)
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextFormField(
+            controller: _piecesControllers[index],
+            validator: (String text) {
+              try {
+                text.toSingleVariableFunction('t');
+                return null;
+              } catch (e) {
+                print(e);
+                return 'invalid';
+              }
+            },
+          ),
+        ),
+      Row(
+        children: [
+          Expanded(
+            child: IconButton(
+              icon: Icon(Icons.add),
+              onPressed: _piecesControllers.length < maxPieces
+                  ? () {
+                      setState(() {
+                        _piecesControllers.add(
+                          TextEditingController(),
+                        );
+                      });
+                    }
+                  : null,
             ),
-        barrierDismissible: false);
-    if (newValues == null) return;
-    _boundsRangeValues = newValues;
-    _selectorRangeValues = newValues;
-    setState(() {
-      _updateChartData();
-    });
+          ),
+          Expanded(
+            child: IconButton(
+              icon: Icon(Icons.remove),
+              onPressed: _piecesControllers.length > minPieces
+                  ? () {
+                      setState(() {
+                        _piecesControllers.removeLast();
+                      });
+                    }
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    ];
   }
 
-  void _setPiecesNumber(int value) {
-    setState(() {
-      _piecesCount = value;
-      _piecewiseFunction = PiecewiseFunction(
-        expressions: List<tree.SingleVariableFunction>(_piecesCount),
-        discontinuities: List<double>(_piecesCount - 1),
-      );
-      if (_piecesCount == 1) {
-        _discontinuitiesControllers = null;
-        _piecesControllers = [TextEditingController(text: '')];
-      } else {
-        _discontinuitiesControllers = [
-          for (int i = 0; i < _piecesCount - 1; i++)
-            TextEditingController(text: '')
-        ];
-        _piecesControllers = [
-          for (int i = 0; i < _piecesCount; i++) TextEditingController(text: '')
-        ];
-      }
-    });
+  List<Widget> buildSecondPage() {
+    return [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                extraLinesData: ExtraLinesData(horizontalLines: [
+                  HorizontalLine(y: 0, strokeWidth: 0.5, color: Colors.black54)
+                ]),
+                maxY: _maxY,
+                minY: -_maxY,
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(show: false
+                    //bottomTitles:
+                    //   SideTitles(showTitles: true, getTitles: _xGenerator),
+                    ),
+                lineTouchData: LineTouchData(enabled: false),
+                lineBarsData: [
+                  LineChartBarData(
+                      spots: _chartData,
+                      barWidth: 2,
+                      dotData: FlDotData(show: false),
+                      colors: [Colors.blueGrey]),
+                  LineChartBarData(
+                      spots: _chartData
+                          .where((element) =>
+                              element.x > values.first &&
+                              element.x < values.last)
+                          .toList(),
+                      barWidth: 5,
+                      dotData: FlDotData(show: false),
+                      colors: [Colors.black]),
+                ],
+              ),
+            ),
+          ),
+          MultiSlider(
+            values: values,
+            onChanged: (newValues) => setState(() {
+              values = newValues;
+              updateUserInput();
+              _updateChartData();
+            }),
+            max: maxChart,
+            min: minChart,
+          ),
+        ],
+      ),
+      FlatButton(
+        child: Text('Plotar Serie'),
+        onPressed: nextPage,
+      )
+    ];
   }
 
-  void _onStepContinue() {
-    setState(() {
-      switch (_stepIndex) {
-        case 0:
-          if (_lastPiecesCount != _piecesCount) {
-            _setPiecesNumber(_piecesCount);
-            _lastPiecesCount = _piecesCount;
-          }
-          if (_piecesCount == 1)
-            _stepIndex = 2;
-          else
-            _stepIndex = 1;
-          break;
-        case 1:
-          if (_formOneKey.currentState.validate()) {
-            for (int i = 0; i < _discontinuitiesControllers.length; i++)
-              for (int j = i + 1; j < _discontinuitiesControllers.length; j++)
-                if (_piecewiseFunction.discontinuities[i] >
-                    _piecewiseFunction.discontinuities[j]) {
-                  showDialog(
-                      context: context,
-                      builder: (BuildContext context) => AlertDialog(
-                            title: Text(kInvalidOrderTitleText[_language]),
-                            content: Text(kInvalidOrderContentText[_language]),
-                            actions: <Widget>[
-                              FlatButton(
-                                  child: Text('Ok'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  }),
-                            ],
-                          ));
-                  return;
-                }
-            _stepIndex++;
-          }
-          break;
-        case 2:
-          if (_formTwoKey.currentState.validate()) {
-            _updateChartData();
-            _stepIndex++;
-          }
-          break;
-        case 3:
-          Navigator.of(context).pushNamed('/calc-result', arguments: [
-            _selectorRangeValues,
-            _piecewiseFunction,
-          ]);
-          break;
-      }
-    });
+  List<tree.SingleVariableFunction> _parseFunctions() {
+    return _piecesControllers
+        .map<String>((controller) => controller.text)
+        .map<tree.SingleVariableFunction>(
+          (text) => text.toSingleVariableFunction('t'),
+        )
+        .toList();
+  }
+
+  List<double> generateValues() {
+    int numberOfValues = _functions.length + 1;
+    double range = maxChart - minChart;
+    return List<double>.generate(numberOfValues,
+        (index) => range * index / (numberOfValues - 1) + minChart);
+  }
+
+  void generateUserInput() {
+    _functions = _parseFunctions();
+    values = generateValues();
+  }
+
+  void updateUserInput() {
+    _piecewiseFunction = PiecewiseFunction(
+        expressions: _functions,
+        discontinuities: values.getRange(1, values.length - 1).toList());
   }
 
   void _updateChartData([int numberOfPoints = 1024]) {
-    final plotData = _piecewiseFunction.discretize(
-        start: _boundsRangeValues.start,
-        end: _boundsRangeValues.end,
-        length: numberOfPoints);
+    final plotData = _piecewiseFunction.callFromLinearSpace(
+      LinearSpace(
+        start: minChart,
+        end: maxChart,
+        length: numberOfPoints,
+      ),
+    );
     _maxY = 1.25 *
         plotData.fold(
             0,
@@ -262,31 +244,10 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
     _chartData = plotData.map((e) => FlSpot(e.x, e.y)).toList();
   }
 
-  void _onStepCancel() {
-    setState(() {
-      switch (_stepIndex) {
-        case 1:
-          _stepIndex = 0;
-          break;
-        case 2:
-          if (_piecesCount == 1)
-            _stepIndex = 0;
-          else
-            _stepIndex = 1;
-          break;
-        case 3:
-          _stepIndex--;
-          break;
-      }
-    });
+  void nextPage() {
+    Navigator.of(context).pushNamed('/calc-result', arguments: [
+      [values.first, values.last],
+      _piecewiseFunction,
+    ]);
   }
 }
-
-Step customStep({int stepIndex, int stepGroup, Widget content, String title}) =>
-    Step(
-        title: Text(stepIndex == stepGroup ? title : ''),
-        isActive: stepIndex == stepGroup,
-        content: stepIndex == stepGroup ? content : Container(),
-        state: stepIndex == stepGroup
-            ? StepState.editing
-            : stepIndex < stepGroup ? StepState.complete : StepState.indexed);
