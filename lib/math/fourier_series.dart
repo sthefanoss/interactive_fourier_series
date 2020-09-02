@@ -145,12 +145,14 @@ class FourierSeries {
     int lowerCutoffIndex,
     int higherCutoffIndex,
   }) {
-    return space.data.map<Point<double>>(
-      (value) => call(
-        value,
-        lowerCutoffIndex: lowerCutoffIndex,
-        higherCutoffIndex: higherCutoffIndex,
-      ),
-    );
+    return space.data
+        .map<Point<double>>(
+          (value) => call(
+            value,
+            lowerCutoffIndex: lowerCutoffIndex,
+            higherCutoffIndex: higherCutoffIndex,
+          ),
+        )
+        .toList();
   }
 }
