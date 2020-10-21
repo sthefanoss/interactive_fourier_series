@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tex/flutter_tex.dart';
+
 import '../strings/constants.dart';
 import '../strings/regular_expressions.dart';
-import 'package:flutter_tex/flutter_tex.dart';
 import '../widgets/text_loading_widget.dart';
 
 class HomePage extends StatelessWidget {
@@ -12,11 +13,18 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: Text(kAppName[_language]),
         centerTitle: true,
-        actions: <Widget>[IconButton(icon: Icon(Icons.info_outline),onPressed: (){Navigator.pushNamed(context, '/info');},)],
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.pushNamed(context, '/info');
+            },
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushNamed('/calc-input');
+          Navigator.of(context).pushNamed('/func-cat');
         },
         child: Icon(Icons.play_arrow),
       ),
@@ -29,8 +37,8 @@ class HomePage extends StatelessWidget {
               child: TeXView(
                 child: TeXViewDocument(kIntroText[_language]),
                 renderingEngine: TeXViewRenderingEngine.mathjax(),
-                loadingWidgetBuilder: (context) =>
-                    TexLoadingWidget(text: kRenderingIntroductionText[_language]),
+                loadingWidgetBuilder: (context) => TexLoadingWidget(
+                    text: kRenderingIntroductionText[_language]),
               ),
             ),
           ),
