@@ -1,50 +1,78 @@
-const kIntroText = {
-  'pt':
-      r"""<p><B>História</B></p><p> A Série de Fourier é uma forma de série trigonométrica usada para representar funções infinitas
- e periódicas complexas dos processos físicos, na forma de senos e cossenos.
- Simplificando a visualização e manipulação de funções complexas.
-  Foi criada em 1807 por Jean Baptiste Joseph Fourier (1768-1830).</p>
-  <p><B>Equacionamento</B></p><p>
-<p>A forma geral da série é:</p>
+const kA0 = r'a_0 = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) dt';
+const kAn =
+    r'a_n = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) \cdot{} cos(n \omega_0 t) dt';
+const kBn =
+    r'b_n = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) \cdot{} sin(n \omega_0 t) dt';
+const kSF =
+    r's(t) = \frac{a_0}{2} + \sum^{\infty}_{n=1}[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})]';
+const kw0 = r'\omega_0 = \frac{2 \pi}{T_0}';
 
-$$s(t) = {a_0 \over 2} + \sum_{n=1}^{\infty}\Big[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})\Big]$$
-<p>Onde \(T_0\) é o período fundamental, e \(\omega_0\) é a frequência angular dada por:</p>
-$$\omega_0 = \frac{2 \pi}{T_0}$$
-<p>
-Os termos \(a_0\), \(a_n\) e \(b_n\) são números que variam de acordo com a função que será representada.
- São as amplitudes de cada onda em série, que são calculados com as seguintes equações:
- $$a_0 = \frac{2}{T_0} \int_{T_0} x(t) dt$$
- $$a_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} cos(n \omega_0 t) dt$$
- $$b_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} sin(n \omega_0 t) dt$$
- <p>
- <p>O intervalo de integração \(T_0\) é abitrário. Geralmente os limitantes são \(-T_0 \over 2\) e \(T_0 \over 2\) para tirar proveito da simetria.
- <p><B>Utilização</B></p><p>
- <p>A Série de Fourier é importante na técnica de compactação digital, como por exemplo: para reproduzir músicas digitais por streaming, 
- para ver imagens online de rápido carregamento, e no cancelamento de ruído nos fones de ouvido.</p><br>""",
-  'en':
-      r"""<p><B>History</B></p><p>The Fourier Series is a form of trigonometric series used to represent infinite functions
- and complex periodic physical processes, in the form of sines and cosines.
- Simplifying the visualization and manipulation of complex functions.
-  It was created in 1807 by Jean Baptiste Joseph Fourier (1768-1830).</p>
-  <p><B>Equation</B></p><p>
-<p>The general form of the series is:</p>
-
-$$s(t) = {a_0 \over 2} + \sum_{n=1}^{\infty}\Big[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})\Big]$$
-<p>Where \(T_0\) is the fundamental period, and \(omega_0\) is an angular frequency given by:</p>
-$$\omega_0 = \frac{2 \pi}{T_0}$$
-<p>
-The terms \(a_0\), \(a_n\) and \(b_n\) are numbers that vary according to the function that will be represented.
- It is the amplitudes of each wave in series, which are calculated with the following equations:
- $$a_0 = \frac{2}{T_0} \int_{T_0} x(t) dt$$
- $$a_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} cos(n \omega_0 t) dt$$
- $$b_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} sin(n \omega_0 t) dt$$
- <p>
- <p>
-The integration interval \(T_0\) is abitrary. Generally, the limiters are \(- T_0 \over 2\) and \(T_0 \over 2\) to take advantage of symmetry.
- <p><B>Utility</B>
- <p>The Fourier Series is important in the digital compression technique, for example: to play digital music via streaming,
- for fast loading online images, and noise canceling on headphones.</p><br>"""
+const kEquationsTitle = {
+  'pt': 'Equações',
+  'en': 'Equations',
 };
+
+const kHistoryTitle = {
+  'pt': 'História',
+  'en': 'History',
+};
+
+const kHistoryText = {
+  'pt':
+      r'''A Série de Fourier é uma forma de série trigonométrica usada para representar funções infinitas e periódicas complexas dos processos físicos, na forma de senos e cossenos. Simplificando a visualização e manipulação de funções complexas. Foi criada em 1807 por Jean Baptiste Joseph Fourier (1768-1830).''',
+  'en':
+      r'''The Fourier Series is a form of trigonometric series used to represent infinite functions and complex periodic physical processes, in the form of sines and cosines. Simplifying the visualization and manipulation of complex functions. It was created in 1807 by Jean Baptiste Joseph Fourier (1768-1830).''',
+};
+const kUtilizationTitle = {
+  'pt': r'Utilização',
+  'en': r'Utility',
+};
+const kUtilizationText = {
+  'pt':
+      r'''A Série de Fourier é importante na técnica de compactação digital, como por exemplo: para reproduzir músicas digitais por streaming, para ver imagens online de rápido carregamento, e no cancelamento de ruído nos fones de ouvido.''',
+  'en':
+      '''The Fourier Series is important in the digital compression technique, for example: to play digital music via streaming,
+ for fast loading online images, and noise canceling on headphones.'''
+};
+
+//   'pt':
+//       r"""<p><B>História</B></p><p> </p>
+//   <p><B>Equacionamento</B></p><p>
+// <p>A forma geral da série é:</p>
+//
+// $$s(t) = {a_0 \over 2} + \sum_{n=1}^{\infty}\Big[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})\Big]$$
+// <p>Onde \(T_0\) é o período fundamental, e \(\omega_0\) é a frequência angular dada por:</p>
+// $$\omega_0 = \frac{2 \pi}{T_0}$$
+// <p>
+// Os termos \(a_0\), \(a_n\) e \(b_n\) são números que variam de acordo com a função que será representada.
+//  São as amplitudes de cada onda em série, que são calculados com as seguintes equações:
+//  $$a_0 = \frac{2}{T_0} \int_{T_0} x(t) dt$$
+//  $$a_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} cos(n \omega_0 t) dt$$
+//  $$b_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} sin(n \omega_0 t) dt$$
+//  <p>
+//  <p>O intervalo de integração \(T_0\) é abitrário. Geralmente os limitantes são \(-T_0 \over 2\) e \(T_0 \over 2\) para tirar proveito da simetria.
+//  <p><B>Utilização</B></p><p>
+//  <p></p><br>""",
+//   'en':
+//       r"""<p><B>History</B></p><p></p>
+//   <p><B>Equation</B></p><p>
+// <p>The general form of the series is:</p>
+//
+// $$s(t) = {a_0 \over 2} + \sum_{n=1}^{\infty}\Big[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})\Big]$$
+// <p>Where \(T_0\) is the fundamental period, and \(omega_0\) is an angular frequency given by:</p>
+// $$\omega_0 = \frac{2 \pi}{T_0}$$
+// <p>
+// The terms \(a_0\), \(a_n\) and \(b_n\) are numbers that vary according to the function that will be represented.
+//  It is the amplitudes of each wave in series, which are calculated with the following equations:
+//  $$a_0 = \frac{2}{T_0} \int_{T_0} x(t) dt$$
+//  $$a_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} cos(n \omega_0 t) dt$$
+//  $$b_n = \frac{2}{T_0} \int_{T_0} x(t) \cdot{} sin(n \omega_0 t) dt$$
+//  <p>
+//  <p>
+// The integration interval \(T_0\) is abitrary. Generally, the limiters are \(- T_0 \over 2\) and \(T_0 \over 2\) to take advantage of symmetry.
+//  <p><B>Utility</B>
+//  <p></p><br>"""
+// };
 
 const kDiscontinuitiesHintText = {
   'pt': r"""<p> Entre a quantidade de <B>sentenças</B> de \(x(t)\):
