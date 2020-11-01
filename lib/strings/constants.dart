@@ -11,6 +11,11 @@ const kFunctionsCatalog = {
   'en': 'Functions Catalog',
 };
 
+const kFunctionInput = {
+  'pt': 'Entrada de Função',
+  'en': 'Function Input',
+};
+
 const kIfText = {
   'pt': 'se',
   'en': 'if',

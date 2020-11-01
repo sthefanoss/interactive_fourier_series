@@ -39,8 +39,12 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
+    final _language = getLocationCode(context);
+    return CustomScaffold(
+      appBar: AppBar(
+        title: Text(kFunctionInput[_language]),
+        centerTitle: true,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _tabIndex,
         onTap: (int index) {
