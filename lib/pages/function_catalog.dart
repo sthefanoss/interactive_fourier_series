@@ -5,9 +5,12 @@ import 'package:ifs/widgets/function_catalog_grid_tile.dart';
 class FunctionCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final _language = getLocationCode(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Functions"),
+        title: Text(kFunctionsCatalog[_language]),
+        centerTitle: true,
       ),
       floatingActionButton: Opacity(
         opacity: 0.5,

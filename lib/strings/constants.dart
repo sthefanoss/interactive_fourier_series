@@ -6,6 +6,11 @@ String getLocationCode(BuildContext context) {
   return _supportedLanguages.contains(language) ? language : 'en';
 }
 
+const kFunctionsCatalog = {
+  'pt': 'Catálogo de Funções',
+  'en': 'Functions Catalog',
+};
+
 const kIfText = {
   'pt': 'se',
   'en': 'if',
