@@ -1,16 +1,17 @@
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_tex/flutter_tex.dart';
 import 'package:ifs/math/linear_space.dart';
-import '../strings/generators.dart';
-import '../strings/constants.dart';
-import 'dart:math';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:ifs/widgets/piecewise_function_display.dart';
+
 import '../math/fourier_series.dart';
 import '../math/piecewise_function.dart';
-import '../widgets/text_loading_widget.dart';
+import '../strings/constants.dart';
+import '../widgets/custom_scaffold.dart';
 
 extension psdfsdf on Point {
   FlSpot get toSpot => FlSpot(this.x, this.y);
@@ -188,30 +189,7 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
                       Card(
                         elevation: 2,
                         clipBehavior: Clip.hardEdge,
-                        child: TeXView(
-                          child: TeXViewDocument(
-                            fourierSeriesResultText(
-                                discontinuities: _piecewiseFunction
-                                    .discontinuities
-                                    .map((v) => v.toStringAsFixed(2))
-                                    .toList(),
-                                expressions: _piecewiseFunction.expressions
-                                    .map((f) => f.tex)
-                                    .toList(),
-                                start: _start,
-                                end: _end,
-                                rmsValue:
-                                    _trigonometricFourierSeries.rootMeanSquare,
-                                language: _language),
-                          ),
-                          renderingEngine: TeXViewRenderingEngine.mathjax(),
-                          loadingWidgetBuilder: (context) => TexLoadingWidget(
-                            height: (200 +
-                                    _piecewiseFunction.discontinuities.length *
-                                        10)
-                                .toDouble(),
-                          ),
-                        ),
+                        child: PiecewiseFunctionDisplay(_piecewiseFunction),
                       ),
                     ],
                   ),
@@ -535,8 +513,11 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
     });
   }
 
-  String _subLabelGenerator(double value) =>
-      value == 0 ? 'DC' : value == 1 ? 'F' : value.toStringAsFixed(0) + 'H';
+  String _subLabelGenerator(double value) => value == 0
+      ? 'DC'
+      : value == 1
+          ? 'F'
+          : value.toStringAsFixed(0) + 'H';
 
   RangeLabels _labelGenerator(RangeValues value) {
     return RangeLabels(
