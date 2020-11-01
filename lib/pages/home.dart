@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../strings/constants.dart';
 import '../strings/regular_expressions.dart';
+import '../widgets/custom_scaffold.dart';
 
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _language = getLocationCode(context);
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text(kAppName[_language]),
         centerTitle: true,

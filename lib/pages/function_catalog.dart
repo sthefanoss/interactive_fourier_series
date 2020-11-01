@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:ifs/math/fourier_series_input_function.dart';
 import 'package:ifs/widgets/function_catalog_grid_tile.dart';
 
+import '../strings/constants.dart';
+import '../widgets/custom_scaffold.dart';
+
 class FunctionCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _language = getLocationCode(context);
 
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text(kFunctionsCatalog[_language]),
         centerTitle: true,

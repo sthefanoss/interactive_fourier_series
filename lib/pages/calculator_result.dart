@@ -157,7 +157,7 @@ class _CalculatorResultPageState extends State<CalculatorResultPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(kCalculatorResultName[_language]),
