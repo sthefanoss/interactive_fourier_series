@@ -4,31 +4,19 @@ import 'package:function_tree/function_tree.dart';
 import 'package:ifs/math/linear_space.dart';
 
 class PiecewiseFunction {
-  final List<double> discontinuities;
-  final List<SingleVariableFunction> expressions;
+  static const maxPieces = 5;
+  static const minPieces = 1;
+  List<double> discontinuities;
+  List<SingleVariableFunction> expressions;
+  List<String> expressionsAsString;
 
-  const PiecewiseFunction({
+  PiecewiseFunction({
     this.discontinuities = const [],
-    this.expressions,
-  });
-
-  PiecewiseFunction.fromString({
-    this.discontinuities = const [],
-    List<String> expressionsAsString,
+    this.expressionsAsString,
   }) : expressions = expressionsAsString
             .map((expressionAsString) =>
                 expressionAsString.toSingleVariableFunction('t'))
             .toList();
-
-  PiecewiseFunction copyWith({
-    List<double> discontinuities,
-    List<SingleVariableFunction> expressions,
-  }) {
-    return PiecewiseFunction(
-      discontinuities: discontinuities ?? this.discontinuities,
-      expressions: expressions ?? this.expressions,
-    );
-  }
 
   Point<double> call(double x) {
     int index;
