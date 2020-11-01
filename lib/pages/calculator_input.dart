@@ -1,12 +1,17 @@
+import 'dart:math';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:ifs/math/linear_space.dart';
-import 'dart:math';
+import 'package:flutter_multi_slider/flutter_multi_slider.dart';
 import 'package:function_tree/function_tree.dart' as tree;
-import 'package:fl_chart/fl_chart.dart';
-import 'package:ifs/widgets/multi_slider.dart';
+import 'package:ifs/math/linear_space.dart';
+
 import '../math/piecewise_function.dart';
+import '../strings/constants.dart';
+import '../widgets/custom_scaffold.dart';
+import '../widgets/piecewise_function_display.dart';
 
 class CalculatorInputPage extends StatefulWidget {
   @override
@@ -14,28 +19,42 @@ class CalculatorInputPage extends StatefulWidget {
 }
 
 class _CalculatorInputPageState extends State<CalculatorInputPage> {
-  static const maxPieces = 5;
-  static const minPieces = 1;
-
   ///general
   int _tabIndex = 0;
 
   ///step zero
-  final List<TextEditingController> _piecesControllers = [
-    TextEditingController(text: '-sin(t)'),
-    TextEditingController(text: 'sin(t)'),
-  ];
+  final List<TextEditingController> _piecesControllers = [];
+
   final _formKey = GlobalKey<FormState>();
-  PiecewiseFunction _piecewiseFunction;
+  PiecewiseFunction _piecewiseFunction = PiecewiseFunction(
+    discontinuities: [0],
+    expressionsAsString: [
+      't',
+      'sin(t)',
+    ],
+  );
 
   ///step one
-  List<double> values;
   List<tree.SingleVariableFunction> _functions;
   double maxChart = pi;
   double minChart = -pi;
+  double maxFunctionWindow;
+  double minFunctionWindow;
 
   List<FlSpot> _chartData;
   double _maxY;
+
+  @override
+  void initState() {
+    _piecewiseFunction.expressionsAsString.forEach(
+      (string) => _piecesControllers.add(
+        TextEditingController(text: string),
+      ),
+    );
+
+    updateDiscontinuitiesAndBoundaries();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,21 +69,22 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
         onTap: (int index) {
           if (_tabIndex == index) return;
 
-          if (index == 0) {
-            setState(() {
-              _tabIndex = index;
-            });
-          } else {
-            if (!_formKey.currentState.validate()) return;
-
+          //      if (index == 0) {
+          setState(() {
             _tabIndex = index;
+          });
 
-            generateUserInput();
-            updateUserInput();
-            _updateChartData();
+          if (index == 1) _updateChartData();
 
-            setState(() {});
-          }
+          // } else {
+          //   _tabIndex = index;
+          //
+          //   // generateUserInput();
+          //   // updateUserInput();
+          //   // _updateChartData();
+          //
+          //   setState(() {});
+          // }
         },
         items: [
           BottomNavigationBarItem(
@@ -86,8 +106,13 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
       body: Form(
         key: _formKey,
         child: SafeArea(
-          child: Column(
-            children: _tabIndex == 0 ? buildFirstPage() : buildSecondPage(),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              PiecewiseFunctionDisplay(_piecewiseFunction),
+              Divider(),
+              ..._tabIndex == 0 ? buildFirstPage() : buildSecondPage(),
+            ],
           ),
         ),
       ),
@@ -101,6 +126,25 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
           padding: const EdgeInsets.all(8.0),
           child: TextFormField(
             controller: _piecesControllers[index],
+            onChanged: (String text) {
+              try {
+                if (text.contains('{')) {
+                  _piecesControllers[index].text = text.replaceFirst('{', '');
+                  return;
+                }
+                if (text.contains('}')) {
+                  _piecesControllers[index].text = text.replaceFirst('}', '');
+                  return;
+                }
+                final expression = text.toSingleVariableFunction('t');
+                setState(() {
+                  _piecewiseFunction.expressions[index] = expression;
+                  _piecewiseFunction.expressionsAsString[index] = text;
+                });
+              } catch (e) {
+                print(e);
+              }
+            },
             validator: (String text) {
               try {
                 text.toSingleVariableFunction('t');
@@ -117,12 +161,22 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
           Expanded(
             child: IconButton(
               icon: Icon(Icons.add),
-              onPressed: _piecesControllers.length < maxPieces
+              onPressed: _piecesControllers.length < PiecewiseFunction.maxPieces
                   ? () {
+                      print(_piecewiseFunction.expressions.length);
+                      final String defaultFunction = '0';
+                      final expression =
+                          defaultFunction.toSingleVariableFunction('t');
+                      _piecewiseFunction.expressions.add(expression);
+                      _piecewiseFunction.expressionsAsString.add(
+                        defaultFunction,
+                      );
+                      _piecewiseFunction.discontinuities.add(0);
                       setState(() {
-                        _piecesControllers.add(
-                          TextEditingController(),
-                        );
+                        _piecesControllers
+                            .add(TextEditingController(text: defaultFunction));
+
+                        updateDiscontinuitiesAndBoundaries();
                       });
                     }
                   : null,
@@ -131,10 +185,17 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
           Expanded(
             child: IconButton(
               icon: Icon(Icons.remove),
-              onPressed: _piecesControllers.length > minPieces
+              onPressed: _piecesControllers.length > PiecewiseFunction.minPieces
                   ? () {
+                      if (_piecewiseFunction.expressions.length > 1)
+                        _piecewiseFunction.discontinuities.removeLast();
+                      _piecewiseFunction.expressions.removeLast();
+                      _piecewiseFunction.expressionsAsString.removeLast();
+
                       setState(() {
                         _piecesControllers.removeLast();
+
+                        updateDiscontinuitiesAndBoundaries();
                       });
                     }
                   : null,
@@ -175,8 +236,8 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
                   LineChartBarData(
                       spots: _chartData
                           .where((element) =>
-                              element.x > values.first &&
-                              element.x < values.last)
+                              element.x > minFunctionWindow &&
+                              element.x < maxFunctionWindow)
                           .toList(),
                       barWidth: 5,
                       dotData: FlDotData(show: false),
@@ -186,14 +247,23 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
             ),
           ),
           MultiSlider(
-            values: values,
+            values: [
+              minFunctionWindow,
+              ..._piecewiseFunction.discontinuities,
+              maxFunctionWindow
+            ],
             onChanged: (newValues) => setState(() {
-              values = newValues;
-              updateUserInput();
+              minFunctionWindow = newValues.first;
+              _piecewiseFunction.discontinuities = newValues.sublist(
+                1,
+                newValues.length - 1,
+              );
+              maxFunctionWindow = newValues.last;
               _updateChartData();
             }),
             max: maxChart,
             min: minChart,
+            color: Colors.black,
           ),
         ],
       ),
@@ -204,31 +274,21 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
     ];
   }
 
-  List<tree.SingleVariableFunction> _parseFunctions() {
-    return _piecesControllers
-        .map<String>((controller) => controller.text)
-        .map<tree.SingleVariableFunction>(
-          (text) => text.toSingleVariableFunction('t'),
-        )
-        .toList();
-  }
-
-  List<double> generateValues() {
-    int numberOfValues = _functions.length + 1;
+  void updateDiscontinuitiesAndBoundaries() {
+    int numberOfValues = _piecewiseFunction.discontinuities.length + 2;
     double range = maxChart - minChart;
-    return List<double>.generate(numberOfValues,
-        (index) => range * index / (numberOfValues - 1) + minChart);
-  }
 
-  void generateUserInput() {
-    _functions = _parseFunctions();
-    values = generateValues();
-  }
+    List<double> discontinuitiesAndBoundaries = List<double>.generate(
+      numberOfValues,
+      (index) => range * index / (numberOfValues - 1) + minChart,
+    );
 
-  void updateUserInput() {
-    _piecewiseFunction = PiecewiseFunction(
-        expressions: _functions,
-        discontinuities: values.getRange(1, values.length - 1).toList());
+    _piecewiseFunction.discontinuities = discontinuitiesAndBoundaries
+        .getRange(1, discontinuitiesAndBoundaries.length - 1)
+        .toList();
+
+    minFunctionWindow = discontinuitiesAndBoundaries.first;
+    maxFunctionWindow = discontinuitiesAndBoundaries.last;
   }
 
   void _updateChartData([int numberOfPoints = 1024]) {
@@ -250,7 +310,7 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
 
   void nextPage() {
     Navigator.of(context).pushNamed('/calc-result', arguments: [
-      [values.first, values.last],
+      [minFunctionWindow, maxFunctionWindow],
       _piecewiseFunction,
     ]);
   }
