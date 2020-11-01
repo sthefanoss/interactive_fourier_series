@@ -1,8 +1,6 @@
-const kA0 = r'a_0 = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) dt';
-const kAn =
-    r'a_n = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) \cdot{} cos(n \omega_0 t) dt';
-const kBn =
-    r'b_n = \frac{2}{T_0} \int_{c}^{c+T_0} x(t) \cdot{} sin(n \omega_0 t) dt';
+const kA0 = r'a_0 = \frac{2}{T_0} \int_{T_0} x(t) dt';
+const kAn = r'a_n = \frac{2}{T_0} \int_{T_0} x(t) cos(n \omega_0 t) dt';
+const kBn = r'b_n = \frac{2}{T_0} \int_{T_0} x(t) sin(n \omega_0 t) dt';
 const kSF =
     r's(t) = \frac{a_0}{2} + \sum^{\infty}_{n=1}[ a_n cos(n \omega_0 t) + b_n sin({n \omega_0 t})]';
 const kw0 = r'\omega_0 = \frac{2 \pi}{T_0}';
