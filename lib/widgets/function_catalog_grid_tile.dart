@@ -1,7 +1,10 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:ifs/math/fourier_series_input_function.dart';
 import 'package:ifs/math/linear_space.dart';
+
+import 'line_chart.dart';
 
 class FunctionCatalogGridTile extends StatefulWidget {
   final FourierSeriesInputFunction functionInput;
@@ -13,7 +16,7 @@ class FunctionCatalogGridTile extends StatefulWidget {
 }
 
 class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
-  List<FlSpot> _spots;
+  List<Point<double>> _spots;
   double _maxY;
 
   @override
@@ -38,7 +41,7 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
                 ? previousValue.abs()
                 : element.y.abs());
     setState(() {
-      _spots = plotData.map((e) => FlSpot(e.x, e.y)).toList();
+      _spots = plotData;
     });
   }
 
@@ -60,27 +63,16 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
           child: _spots == null
               ? Container()
               : LineChart(
-                  LineChartData(
-                    gridData: FlGridData(show: false),
-                    extraLinesData: ExtraLinesData(horizontalLines: [
-                      HorizontalLine(
-                          y: 0, strokeWidth: 0.5, color: Colors.black26)
-                    ]),
+                  input: [
+                    ChartInput(
+                      samples: _spots,
+                    )
+                  ],
+                  boundaries: ChartBoundaries(
                     maxY: _maxY,
                     minY: -_maxY,
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(show: false
-                        //bottomTitles:
-                        //   SideTitles(showTitles: true, getTitles: _xGenerator),
-                        ),
-                    lineTouchData: LineTouchData(enabled: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                          spots: _spots,
-                          barWidth: 2,
-                          dotData: FlDotData(show: false),
-                          colors: [Colors.blueGrey.withOpacity(0.5)]),
-                    ],
+                    maxX: _spots.last.x,
+                    minX: _spots.first.x,
                   ),
                 ),
         ),

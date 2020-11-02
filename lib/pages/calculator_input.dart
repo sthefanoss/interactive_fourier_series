@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_multi_slider/flutter_multi_slider.dart';
 import 'package:function_tree/function_tree.dart' as tree;
 import 'package:ifs/math/linear_space.dart';
+import 'package:ifs/widgets/line_chart.dart';
 
 import '../math/piecewise_function.dart';
 import '../strings/constants.dart';
@@ -41,7 +41,7 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
   double maxFunctionWindow;
   double minFunctionWindow;
 
-  List<FlSpot> _chartData;
+  List<Point<double>> _chartData;
   double _maxY;
 
   @override
@@ -213,37 +213,62 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                extraLinesData: ExtraLinesData(horizontalLines: [
-                  HorizontalLine(y: 0, strokeWidth: 0.5, color: Colors.black54)
-                ]),
+            child:
+
+                // LineChart(
+                //   LineChartData(
+                //     gridData: FlGridData(show: false),
+                //     extraLinesData: ExtraLinesData(horizontalLines: [
+                //       HorizontalLine(y: 0, strokeWidth: 0.5, color: Colors.black54)
+                //     ]),
+                //     maxY: _maxY,
+                //     minY: -_maxY,
+                //     borderData: FlBorderData(show: false),
+                //     titlesData: FlTitlesData(show: false
+                //         //bottomTitles:
+                //         //   SideTitles(showTitles: true, getTitles: _xGenerator),
+                //         ),
+                //     lineTouchData: LineTouchData(enabled: false),
+                //     lineBarsData: [
+                //       LineChartBarData(
+                //           spots: _chartData,
+                //           barWidth: 2,
+                //           dotData: FlDotData(show: false),
+                //           colors: [Colors.blueGrey]),
+                //       LineChartBarData(
+                //           spots: _chartData
+                //               .where((element) =>
+                //                   element.x > minFunctionWindow &&
+                //                   element.x < maxFunctionWindow)
+                //               .toList(),
+                //           barWidth: 5,
+                //           dotData: FlDotData(show: false),
+                //           colors: [Colors.black]),
+                //     ],
+                //   ),
+                // ),
+                LineChart(
+              boundaries: ChartBoundaries(
+                minX: minChart,
+                maxX: maxChart,
                 maxY: _maxY,
                 minY: -_maxY,
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(show: false
-                    //bottomTitles:
-                    //   SideTitles(showTitles: true, getTitles: _xGenerator),
-                    ),
-                lineTouchData: LineTouchData(enabled: false),
-                lineBarsData: [
-                  LineChartBarData(
-                      spots: _chartData,
-                      barWidth: 2,
-                      dotData: FlDotData(show: false),
-                      colors: [Colors.blueGrey]),
-                  LineChartBarData(
-                      spots: _chartData
-                          .where((element) =>
-                              element.x > minFunctionWindow &&
-                              element.x < maxFunctionWindow)
-                          .toList(),
-                      barWidth: 5,
-                      dotData: FlDotData(show: false),
-                      colors: [Colors.black]),
-                ],
               ),
+              input: [
+                ChartInput(
+                  samples: _chartData,
+                  strokeColor: Colors.grey,
+                  strokeWidth: 0.2,
+                ),
+                ChartInput(
+                  strokeWidth: 0.2,
+                  samples: _chartData
+                      .where((sample) =>
+                          sample.x < maxFunctionWindow &&
+                          sample.x > minFunctionWindow)
+                      .toList(),
+                ),
+              ],
             ),
           ),
           MultiSlider(
@@ -305,7 +330,7 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
             (previousValue, element) => previousValue.abs() > element.y.abs()
                 ? previousValue.abs()
                 : element.y.abs());
-    _chartData = plotData.map((e) => FlSpot(e.x, e.y)).toList();
+    _chartData = plotData;
   }
 
   void nextPage() {
