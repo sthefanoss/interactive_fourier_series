@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 
@@ -12,7 +11,7 @@ class ChartInput {
 
   ChartInput({
     @required this.samples,
-    this.strokeWidth = 0.05,
+    this.strokeWidth = 1,
     this.strokeColor = Colors.black54,
   });
 }
@@ -23,12 +22,20 @@ class ChartBoundaries {
   final double minX;
   final double minY;
 
-  ChartBoundaries({
+  const ChartBoundaries({
     this.maxX,
     this.maxY,
     this.minX,
     this.minY,
   });
+
+  const ChartBoundaries.symmetric({
+    double width,
+    double height,
+  })  : this.maxX = width / 2,
+        this.maxY = height / 2,
+        this.minX = -width / 2,
+        this.minY = -height / 2;
 
   factory ChartBoundaries.fromChartInputList(List<ChartInput> input) {
     double maxX = -double.infinity;
@@ -85,7 +92,7 @@ class LineChart extends StatelessWidget {
   factory LineChart({
     List<ChartInput> input,
     ChartBoundaries boundaries,
-    Size size = const Size.fromHeight(100),
+    Size size = const Size.fromHeight(200),
   }) {
     assert(input != null);
 
@@ -127,6 +134,8 @@ class _LineChartPainter extends CustomPainter {
   final ChartBoundaries options;
   final double xRange;
   final double yRange;
+  final double xMean;
+  final double yMean;
   final List<Paint> paints;
 
   _LineChartPainter(
@@ -134,19 +143,30 @@ class _LineChartPainter extends CustomPainter {
     this.options,
   )   : xRange = options.maxX - options.minX,
         yRange = options.maxY - options.minY,
+        xMean = options.maxX + options.minX,
+        yMean = options.maxY + options.minY,
         paints = data.map(_generatePaint).toList();
 
   @override
   void paint(Canvas canvas, Size size) {
     _normalizeCanvas(canvas, size);
+    double xCoefficient = size.width / xRange;
+    double yCoefficient = -size.height / yRange;
 
     for (int dataIndex = 0; dataIndex < data.length; dataIndex++) {
       ChartInput dataElement = data[dataIndex];
+      if (dataElement.samples.isEmpty) continue;
+
       Paint paint = paints[dataIndex];
 
       canvas.drawPoints(
         PointMode.polygon,
-        dataElement.samples.map((e) => Offset(e.x, e.y)).toList(),
+        dataElement.samples
+            .map((sample) => Offset(
+                  (sample.x + xMean) * xCoefficient,
+                  (sample.y + yMean) * yCoefficient,
+                ))
+            .toList(),
         paint,
       );
     }
@@ -156,16 +176,13 @@ class _LineChartPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 
   void _normalizeCanvas(Canvas canvas, Size size) {
-    canvas.scale(size.width / xRange, -size.height / yRange);
-    canvas.translate(xRange / 2, -yRange / 2);
+    canvas.translate(size.width / 2, size.height / 2);
   }
 
   static Paint _generatePaint(ChartInput data) {
     return Paint()
+      ..style = PaintingStyle.stroke
       ..color = data.strokeColor
-      ..strokeWidth = data.strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..isAntiAlias = true
-      ..strokeJoin = StrokeJoin.round;
+      ..strokeWidth = data.strokeWidth;
   }
 }

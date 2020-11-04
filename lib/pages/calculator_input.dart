@@ -257,11 +257,11 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
               input: [
                 ChartInput(
                   samples: _chartData,
-                  strokeColor: Colors.grey,
-                  strokeWidth: 0.2,
+                  strokeColor: Colors.black.withOpacity(0.32),
+                  strokeWidth: 3,
                 ),
                 ChartInput(
-                  strokeWidth: 0.2,
+                  strokeWidth: 3,
                   samples: _chartData
                       .where((sample) =>
                           sample.x < maxFunctionWindow &&
