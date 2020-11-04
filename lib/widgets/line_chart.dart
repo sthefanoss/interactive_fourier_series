@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 
 class ChartInput {
-  final List<Point<double>> samples;
+  final List<Point> samples;
   final Color strokeColor;
   final double strokeWidth;
 
@@ -29,13 +29,13 @@ class ChartBoundaries {
     this.minY,
   });
 
-  const ChartBoundaries.symmetric({
+  ChartBoundaries.symmetric({
     double width,
     double height,
-  })  : this.maxX = width / 2,
-        this.maxY = height / 2,
-        this.minX = -width / 2,
-        this.minY = -height / 2;
+  })  : this.maxX = width != null ? width / 2 : null,
+        this.maxY = height != null ? height / 2 : null,
+        this.minX = width != null ? -width / 2 : null,
+        this.minY = height != null ? -height / 2 : null;
 
   factory ChartBoundaries.fromChartInputList(List<ChartInput> input) {
     double maxX = -double.infinity;
@@ -149,7 +149,6 @@ class _LineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _normalizeCanvas(canvas, size);
     double xCoefficient = size.width / xRange;
     double yCoefficient = -size.height / yRange;
 
@@ -163,8 +162,8 @@ class _LineChartPainter extends CustomPainter {
         PointMode.polygon,
         dataElement.samples
             .map((sample) => Offset(
-                  (sample.x + xMean) * xCoefficient,
-                  (sample.y + yMean) * yCoefficient,
+                  (sample.x - options.minX) * xCoefficient,
+                  (sample.y + options.minY) * yCoefficient,
                 ))
             .toList(),
         paint,
@@ -174,10 +173,6 @@ class _LineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
-
-  void _normalizeCanvas(Canvas canvas, Size size) {
-    canvas.translate(size.width / 2, size.height / 2);
-  }
 
   static Paint _generatePaint(ChartInput data) {
     return Paint()
