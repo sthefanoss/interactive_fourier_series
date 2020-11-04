@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:ifs/math/linear_space.dart';
 import 'package:ifs/math/piecewise_function.dart';
 
@@ -8,18 +9,18 @@ class FourierSeries {
   final double angularFrequency;
   final double rootMeanSquare;
   final double higherAmplitude;
-  final List<double> sineCoefficients;
-  final List<double> cosineCoefficients;
-  final List<double> amplitudeCoefficients;
+  final List<double> bCoefficients;
+  final List<double> aCoefficients;
+  final List<double> magnitudeCoefficients;
   final List<double> phaseCoefficients;
 
   const FourierSeries({
     this.period,
     this.rootMeanSquare,
     this.higherAmplitude,
-    this.sineCoefficients,
-    this.cosineCoefficients,
-    this.amplitudeCoefficients,
+    this.bCoefficients,
+    this.aCoefficients,
+    this.magnitudeCoefficients,
     this.phaseCoefficients,
   })  : frequency = 1 / period,
         angularFrequency = 2 * pi / period;
@@ -47,9 +48,9 @@ class FourierSeries {
     );
 
     return FourierSeries(
-      sineCoefficients: coefficients[0],
-      cosineCoefficients: coefficients[1],
-      amplitudeCoefficients: coefficients[2],
+      bCoefficients: coefficients[0],
+      aCoefficients: coefficients[1],
+      magnitudeCoefficients: coefficients[2],
       phaseCoefficients: coefficients[3],
       period: representationSpace.end - representationSpace.start,
       rootMeanSquare: rootMeanSquare,
@@ -61,8 +62,8 @@ class FourierSeries {
     int numberOfTerms,
     List<Point<double>> functionPoints,
   }) {
-    final sineCoefficients = List<double>(numberOfTerms + 1);
-    final cosineCoefficients = List<double>(numberOfTerms + 1);
+    final bCoefficients = List<double>(numberOfTerms + 1);
+    final aCoefficients = List<double>(numberOfTerms + 1);
     final amplitudeCoefficients = List<double>(numberOfTerms + 1);
     final phaseCoefficients = List<double>(numberOfTerms + 1);
 
@@ -71,32 +72,32 @@ class FourierSeries {
     final double period = (functionPoints.last.x - functionPoints.first.x);
     for (int index = 0; index <= numberOfTerms; index++) {
       double nPiL = index * pi * 2 / period;
-      cosineCoefficients[index] = 0;
-      sineCoefficients[index] = 0;
+      aCoefficients[index] = 0;
+      bCoefficients[index] = 0;
 
       functionPoints.forEach((point) {
         double arc = nPiL * point.x;
-        cosineCoefficients[index] += point.y * cos(arc);
-        sineCoefficients[index] += point.y * sin(arc);
+        aCoefficients[index] += point.y * cos(arc);
+        bCoefficients[index] += point.y * sin(arc);
       });
 
-      cosineCoefficients[index] *= 2 * dx / period;
-      sineCoefficients[index] *= 2 * dx / period;
+      aCoefficients[index] *= 2 * dx / period;
+      bCoefficients[index] *= 2 * dx / period;
     }
 
     ///amplitude and phase coefficients evaluation
     for (int index = 0; index <= numberOfTerms; index++) {
       amplitudeCoefficients[index] = sqrt(
-        cosineCoefficients[index] * cosineCoefficients[index] +
-            sineCoefficients[index] * sineCoefficients[index],
+        aCoefficients[index] * aCoefficients[index] +
+            bCoefficients[index] * bCoefficients[index],
       );
       phaseCoefficients[index] =
-          atan2(sineCoefficients[index], cosineCoefficients[index]);
+          atan2(bCoefficients[index], aCoefficients[index]);
     }
 
     return [
-      sineCoefficients,
-      cosineCoefficients,
+      bCoefficients,
+      aCoefficients,
       amplitudeCoefficients,
       phaseCoefficients
     ];
@@ -127,16 +128,16 @@ class FourierSeries {
 
   Point<double> call(double x, {int lowerCutoffIndex, int higherCutoffIndex}) {
     lowerCutoffIndex = lowerCutoffIndex ?? 0;
-    higherCutoffIndex = higherCutoffIndex ?? amplitudeCoefficients.length - 1;
+    higherCutoffIndex = higherCutoffIndex ?? magnitudeCoefficients.length - 1;
     double sum = 0;
     double arc = angularFrequency * x;
     if (lowerCutoffIndex == 0) {
-      sum = cosineCoefficients[0] / 2;
+      sum = aCoefficients[0] / 2;
       lowerCutoffIndex++;
     }
     for (int index = lowerCutoffIndex; index <= higherCutoffIndex; index++)
-      sum += cosineCoefficients[index] * cos(index * arc) +
-          sineCoefficients[index] * sin(index * arc);
+      sum += aCoefficients[index] * cos(index * arc) +
+          bCoefficients[index] * sin(index * arc);
     return Point(x, sum);
   }
 
