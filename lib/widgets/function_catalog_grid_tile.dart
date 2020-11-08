@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:ifs/math/fourier_series_input_function.dart';
 import 'package:ifs/math/linear_space.dart';
+import 'package:ifs/strings/constants.dart';
 
 import 'line_chart.dart';
 
@@ -47,6 +48,8 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
 
   @override
   Widget build(BuildContext context) {
+    final _language = getLocationCode(context);
+
     return Card(
       child: InkWell(
         onTap: _nextPage,
@@ -54,7 +57,7 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
           header: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              widget.functionInput.name,
+              widget.functionInput.names[_language],
               style: TextStyle(
                 fontWeight: FontWeight.bold,
               ),
