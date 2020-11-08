@@ -2,12 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:ifs/pages/calculator_result.dart';
-import 'package:ifs/pages/function_catalog.dart';
-import 'package:ifs/pages/home.dart';
+import 'package:ifs/pages/function_output_page.dart';
+import 'package:ifs/pages/functions_catalog_page.dart';
+import 'package:ifs/pages/home_page.dart';
+import 'package:ifs/pages/theory_page.dart';
 
-import './pages/calculator_input.dart';
-import 'pages/info.dart';
+import './pages/function_input_page.dart';
+import 'pages/about_page.dart';
 
 void main() {
   runApp(FlutterFourierSeries());
@@ -34,10 +35,11 @@ class FlutterFourierSeries extends StatelessWidget {
           focusColor: Colors.grey),
       routes: {
         '/': (ctx) => HomePage(),
-        '/calc-input': (ctx) => CalculatorInputPage(),
-        '/func-cat': (ctx) => FunctionCatalogPage(),
-        '/calc-result': (ctx) => CalculatorResultPage(),
-        '/info': (ctx) => InfoPage(),
+        '/theory': (ctx) => TheoryPage(),
+        '/func-cat': (ctx) => FunctionsCatalogPage(),
+        '/func-input': (ctx) => FunctionInputPage(),
+        '/func-output': (ctx) => FunctionOutputPage(),
+        '/about': (ctx) => AboutPage(),
       },
     );
   }

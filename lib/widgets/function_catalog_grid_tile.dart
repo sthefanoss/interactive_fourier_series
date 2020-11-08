@@ -26,7 +26,7 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
     super.initState();
   }
 
-  void _updateChartData([int numberOfPoints = 1024]) {
+  void _updateChartData([int numberOfPoints = 256]) {
     final plotData = widget.functionInput.callFromLinearSpace(
       LinearSpace(
         start: widget.functionInput.start,
@@ -81,7 +81,7 @@ class _FunctionCatalogGridTileState extends State<FunctionCatalogGridTile> {
   }
 
   void _nextPage() {
-    Navigator.of(context).pushNamed('/calc-result', arguments: [
+    Navigator.of(context).pushNamed('/func-output', arguments: [
       [widget.functionInput.start, widget.functionInput.end],
       widget.functionInput,
     ]);

@@ -5,24 +5,15 @@ import 'package:ifs/widgets/function_catalog_grid_tile.dart';
 import '../strings/constants.dart';
 import '../widgets/custom_scaffold.dart';
 
-class FunctionCatalogPage extends StatelessWidget {
+class FunctionsCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _language = getLocationCode(context);
 
     return CustomScaffold(
       appBar: AppBar(
-        title: Text(kFunctionsCatalog[_language]),
+        title: Text(kFunctionsCatalogTitle[_language]),
         centerTitle: true,
-      ),
-      floatingActionButton: Opacity(
-        opacity: 0.5,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/calc-input');
-          },
-          child: Icon(Icons.add_chart),
-        ),
       ),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

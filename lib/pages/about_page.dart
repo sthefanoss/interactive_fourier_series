@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../strings/constants.dart';
 import '../widgets/custom_scaffold.dart';
 
-class InfoPage extends StatelessWidget {
+class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _language = getLocationCode(context);
     return CustomScaffold(
       appBar: AppBar(
-        title: Text('Info'),
+        title: Text(kAbout[_language]),
         centerTitle: true,
       ),
       body: SafeArea(

@@ -6,14 +6,40 @@ String getLocationCode(BuildContext context) {
   return _supportedLanguages.contains(language) ? language : 'en';
 }
 
-const kFunctionsCatalog = {
+const kTheoryTitle = {
+  'pt': 'Teoria das Séries de Fourier',
+  'en': 'Fourier Series Theory',
+};
+
+const kTheorySubtitle = {
+  'pt':
+      'Leia sobre a teoria, as equações e as aplicações das Séries de Fourier.',
+  'en': 'Read about Fourier Series theory, equations and applications.',
+};
+
+const kFunctionsCatalogTitle = {
   'pt': 'Catálogo de Funções',
   'en': 'Functions Catalog',
 };
 
-const kFunctionInput = {
+const kFunctionsCatalogSubtitle = {
+  'pt': 'Veja a Série de Fourier de uma função exemplo.',
+  'en': 'See the Fourier Series of some example function.',
+};
+
+const kFunctionInputTitle = {
   'pt': 'Entrada de Função',
   'en': 'Function Input',
+};
+
+const kFunctionInputSubtitle = {
+  'pt': 'Veja a Série de Fourier da função que você entrar.',
+  'en': 'See the Fourier Series of the function you input.',
+};
+
+const kAbout = {
+  'pt': 'Sobre o App',
+  'en': 'About the App',
 };
 
 const kIfText = {
@@ -112,7 +138,7 @@ const kFrequencySpectrumText = {
   'en': 'Frequency Spectrum S(ω)'
 };
 
-const kViewChartText = {'pt': r'Ver Tabela', 'en': 'See Chart'};
+const kViewChartText = {'pt': r'Tabela', 'en': 'Chart'};
 
 const kFrequencyChartTitleText = {
   'pt': r'Tabela de Espectro de Frequência',

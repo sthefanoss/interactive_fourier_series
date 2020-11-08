@@ -13,12 +13,12 @@ import '../strings/constants.dart';
 import '../widgets/custom_scaffold.dart';
 import '../widgets/piecewise_function_display.dart';
 
-class CalculatorInputPage extends StatefulWidget {
+class FunctionInputPage extends StatefulWidget {
   @override
-  _CalculatorInputPageState createState() => _CalculatorInputPageState();
+  _FunctionInputPageState createState() => _FunctionInputPageState();
 }
 
-class _CalculatorInputPageState extends State<CalculatorInputPage> {
+class _FunctionInputPageState extends State<FunctionInputPage> {
   ///general
   int _tabIndex = 0;
 
@@ -59,9 +59,10 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
   @override
   Widget build(BuildContext context) {
     final _language = getLocationCode(context);
+
     return CustomScaffold(
       appBar: AppBar(
-        title: Text(kFunctionInput[_language]),
+        title: Text(kFunctionInputTitle[_language]),
         centerTitle: true,
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -69,22 +70,9 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
         onTap: (int index) {
           if (_tabIndex == index) return;
 
-          //      if (index == 0) {
-          setState(() {
-            _tabIndex = index;
-          });
+          setState(() => _tabIndex = index);
 
           if (index == 1) _updateChartData();
-
-          // } else {
-          //   _tabIndex = index;
-          //
-          //   // generateUserInput();
-          //   // updateUserInput();
-          //   // _updateChartData();
-          //
-          //   setState(() {});
-          // }
         },
         items: [
           BottomNavigationBarItem(
@@ -334,7 +322,7 @@ class _CalculatorInputPageState extends State<CalculatorInputPage> {
   }
 
   void nextPage() {
-    Navigator.of(context).pushNamed('/calc-result', arguments: [
+    Navigator.of(context).pushNamed('/func-output', arguments: [
       [minFunctionWindow, maxFunctionWindow],
       _piecewiseFunction,
     ]);
