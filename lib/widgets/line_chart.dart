@@ -8,11 +8,13 @@ class ChartInput {
   final List<Point> samples;
   final Color strokeColor;
   final double strokeWidth;
+  final bool isDiscrete;
 
   ChartInput({
     @required this.samples,
     this.strokeWidth = 1,
     this.strokeColor = Colors.black54,
+    this.isDiscrete = false,
   });
 }
 
@@ -138,6 +140,8 @@ class _LineChartPainter extends CustomPainter {
   final double yMean;
   final List<Paint> paints;
 
+  Offset Function(Point) _pointNormalizer;
+
   _LineChartPainter(
     this.data,
     this.options,
@@ -152,23 +156,66 @@ class _LineChartPainter extends CustomPainter {
     double xCoefficient = size.width / xRange;
     double yCoefficient = -size.height / yRange;
 
+    _pointNormalizer = (sample) => Offset(
+          (sample.x - options.minX) * xCoefficient,
+          (sample.y + options.minY) * yCoefficient,
+        );
+
+    canvas.drawLine(
+      _pointNormalizer(Point(options.minX, 0)),
+      _pointNormalizer(Point(options.maxX, 0)),
+      Paint()
+        ..color = Colors.black38
+        ..strokeWidth = 0.5,
+    );
+
     for (int dataIndex = 0; dataIndex < data.length; dataIndex++) {
       ChartInput dataElement = data[dataIndex];
       if (dataElement.samples.isEmpty) continue;
 
       Paint paint = paints[dataIndex];
 
-      canvas.drawPoints(
-        PointMode.polygon,
-        dataElement.samples
-            .map((sample) => Offset(
-                  (sample.x - options.minX) * xCoefficient,
-                  (sample.y + options.minY) * yCoefficient,
-                ))
-            .toList(),
+      if (dataElement.isDiscrete)
+        _drawDiscreteFunction(canvas, dataElement.samples, paint);
+      else
+        _drawContinuousFunction(canvas, dataElement.samples, paint);
+    }
+  }
+
+  void _drawContinuousFunction(
+    Canvas canvas,
+    List<Point> samples,
+    Paint paint,
+  ) {
+    canvas.drawPoints(
+      PointMode.polygon,
+      samples.map(_pointNormalizer).toList(),
+      paint,
+    );
+  }
+
+  void _drawDiscreteFunction(
+    Canvas canvas,
+    List<Point> samples,
+    Paint paint,
+  ) {
+    Paint pointPaint = Paint()
+      ..color = paint.color
+      ..strokeWidth = paint.strokeWidth
+      ..style = PaintingStyle.fill;
+
+    samples.forEach((sample) {
+      canvas.drawLine(
+        _pointNormalizer(Point(sample.x, 0.0)),
+        _pointNormalizer(Point(sample.x, sample.y)),
         paint,
       );
-    }
+      canvas.drawCircle(
+        _pointNormalizer(sample),
+        paint.strokeWidth,
+        pointPaint,
+      );
+    });
   }
 
   @override
