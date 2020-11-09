@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class CustomScaffold extends StatelessWidget {
-  // static const isWeb = 0 == 0.0 ? true : false;
   final PreferredSizeWidget appBar;
   final Widget floatingActionButton;
   final Widget body;

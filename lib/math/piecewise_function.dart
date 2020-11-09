@@ -23,7 +23,10 @@ class PiecewiseFunction {
     for (index = 0;
         index < discontinuities.length && x > discontinuities[index];
         index++);
-    return Point<double>(x, expressions[index].call(x).toDouble());
+    double result = expressions[index].call(x).toDouble();
+    if (result.isInfinite || result.isNaN)
+      throw 'The function image is either infinity or NaN!';
+    return Point<double>(x, result);
   }
 
   List<Point<double>> callFromLinearSpace(LinearSpace space) {

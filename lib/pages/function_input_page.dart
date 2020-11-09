@@ -21,6 +21,7 @@ class FunctionInputPage extends StatefulWidget {
 class _FunctionInputPageState extends State<FunctionInputPage> {
   ///general
   int _tabIndex = 0;
+  bool _hasError = false;
 
   ///step zero
   final List<TextEditingController> _piecesControllers = [];
@@ -29,8 +30,8 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
   PiecewiseFunction _piecewiseFunction = PiecewiseFunction(
     discontinuities: [0],
     expressionsAsString: [
-      't',
-      'sin(t)',
+      '0',
+      'sqrt(t)',
     ],
   );
 
@@ -41,8 +42,8 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
   double maxFunctionWindow;
   double minFunctionWindow;
 
-  List<Point<double>> _chartData;
-  double _maxY;
+  List<Point<double>> _chartData = [];
+  double _maxY = 1.25;
 
   @override
   void initState() {
@@ -76,18 +77,12 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
         },
         items: [
           BottomNavigationBarItem(
-            title: Text('Funcoes'),
-            icon: Text(
-              'x(t)',
-              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.pink),
-            ),
+            label: kExpressionsText[_language],
+            icon: Container(),
           ),
           BottomNavigationBarItem(
-            title: Text('Descontinuidades'),
-            icon: Icon(
-              Icons.show_chart,
-              color: Colors.pink,
-            ),
+            label: kPointsAndWindowText[_language],
+            icon: Container(),
           )
         ],
       ),
@@ -104,6 +99,15 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
           ),
         ),
       ),
+      floatingActionButton: _tabIndex == 1
+          ? FloatingActionButton(
+              onPressed: _hasError ? null : nextPage,
+              child: Icon(
+                Icons.navigate_next_sharp,
+              ),
+              backgroundColor: _hasError ? Theme.of(context).errorColor : null,
+            )
+          : null,
     );
   }
 
@@ -195,47 +199,14 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
   }
 
   List<Widget> buildSecondPage() {
+    final _language = getLocationCode(context);
     return [
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child:
-
-                // LineChart(
-                //   LineChartData(
-                //     gridData: FlGridData(show: false),
-                //     extraLinesData: ExtraLinesData(horizontalLines: [
-                //       HorizontalLine(y: 0, strokeWidth: 0.5, color: Colors.black54)
-                //     ]),
-                //     maxY: _maxY,
-                //     minY: -_maxY,
-                //     borderData: FlBorderData(show: false),
-                //     titlesData: FlTitlesData(show: false
-                //         //bottomTitles:
-                //         //   SideTitles(showTitles: true, getTitles: _xGenerator),
-                //         ),
-                //     lineTouchData: LineTouchData(enabled: false),
-                //     lineBarsData: [
-                //       LineChartBarData(
-                //           spots: _chartData,
-                //           barWidth: 2,
-                //           dotData: FlDotData(show: false),
-                //           colors: [Colors.blueGrey]),
-                //       LineChartBarData(
-                //           spots: _chartData
-                //               .where((element) =>
-                //                   element.x > minFunctionWindow &&
-                //                   element.x < maxFunctionWindow)
-                //               .toList(),
-                //           barWidth: 5,
-                //           dotData: FlDotData(show: false),
-                //           colors: [Colors.black]),
-                //     ],
-                //   ),
-                // ),
-                LineChart(
+            child: LineChart(
               boundaries: ChartBoundaries(
                 minX: minChart,
                 maxX: maxChart,
@@ -280,9 +251,23 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
           ),
         ],
       ),
-      FlatButton(
-        child: Text('Plotar Serie'),
-        onPressed: nextPage,
+      AnimatedOpacity(
+        opacity: _hasError ? 1 : 0,
+        duration: Duration(milliseconds: 200),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).errorColor,
+            borderRadius: BorderRadius.all(Radius.circular(4)),
+          ),
+          padding: EdgeInsets.all(8),
+          child: Text(
+            kSomePointIsInvalid[_language],
+            style: Theme.of(context).textTheme.headline6.copyWith(
+                  color: Colors.white,
+                ),
+          ),
+        ),
       )
     ];
   }
@@ -305,20 +290,28 @@ class _FunctionInputPageState extends State<FunctionInputPage> {
   }
 
   void _updateChartData([int numberOfPoints = 1024]) {
-    final plotData = _piecewiseFunction.callFromLinearSpace(
-      LinearSpace(
-        start: minChart,
-        end: maxChart,
-        length: numberOfPoints,
-      ),
-    );
-    _maxY = 1.25 *
-        plotData.fold(
-            0,
-            (previousValue, element) => previousValue.abs() > element.y.abs()
-                ? previousValue.abs()
-                : element.y.abs());
-    _chartData = plotData;
+    try {
+      final plotData = _piecewiseFunction.callFromLinearSpace(
+        LinearSpace(
+          start: minChart,
+          end: maxChart,
+          length: numberOfPoints,
+        ),
+      );
+
+      final _higherValue = plotData.fold(
+          0,
+          (previousValue, element) => previousValue.abs() > element.y.abs()
+              ? previousValue.abs()
+              : element.y.abs());
+
+      _maxY = 1.25 * (_higherValue < 1 ? 1 : _higherValue);
+      _chartData = plotData;
+      _hasError = false;
+    } catch (e) {
+      _chartData = [];
+      _hasError = true;
+    }
   }
 
   void nextPage() {

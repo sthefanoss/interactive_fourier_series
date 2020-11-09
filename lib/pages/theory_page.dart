@@ -1,6 +1,7 @@
 import 'package:catex/catex.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ifs/widgets/content_page.dart';
 
 import '../strings/constants.dart';
 import '../strings/regular_expressions.dart';
@@ -23,25 +24,16 @@ class TheoryPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          kHistoryTitle[language],
-          style: Theme.of(context).textTheme.headline3,
-          textAlign: TextAlign.justify,
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
+        ContentPage(
+          title: kHistoryTitle[language],
+          content: Text(
             kHistoryText[language],
-            style: Theme.of(context).textTheme.headline6,
+            style: Theme.of(context).textTheme.bodyText1,
           ),
         ),
-        Text(
-          kEquationsTitle[language],
-          style: Theme.of(context).textTheme.headline3,
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
+        ContentPage(
+          title: kEquationsTitle[language],
+          content: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -56,16 +48,11 @@ class TheoryPage extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          kUtilizationTitle[language],
-          style: Theme.of(context).textTheme.headline3,
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
+        ContentPage(
+          title: kUtilizationTitle[language],
+          content: Text(
             kUtilizationText[language],
-            textAlign: TextAlign.justify,
-            style: Theme.of(context).textTheme.headline6,
+            style: Theme.of(context).textTheme.bodyText1,
           ),
         ),
       ],
@@ -74,7 +61,7 @@ class TheoryPage extends StatelessWidget {
 
   Widget buildCaTeX(String expression, BuildContext context) {
     return DefaultTextStyle.merge(
-      style: Theme.of(context).textTheme.headline6,
+      style: Theme.of(context).textTheme.subtitle2,
       child: CaTeX(expression),
     );
   }

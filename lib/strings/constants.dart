@@ -68,9 +68,9 @@ const kPiecesNumberText = {
   'en': r'Pieces Number'
 };
 
-const kDiscontinuitiesText = {
-  'pt': r'Descontinuidades',
-  'en': r'Discontinuities',
+const kPointsAndWindowText = {
+  'pt': r'Pontos e Janela',
+  'en': r'Points and Window',
 };
 
 const kIntroductionText = {
@@ -93,9 +93,9 @@ const kInvalidExpressionText = {
   'en': r'Invalid Expression'
 };
 
-const kPiecesOfFtText = {
-  'pt': r'Sentenças de x(t)',
-  'en': r'Pieces of x(t)',
+const kExpressionsText = {
+  'pt': r'Expressões',
+  'en': r'Expressions',
 };
 
 const kInvalidTExpressionText = {
@@ -129,7 +129,7 @@ const kTFGraphsText = {
 };
 
 const kTFilteredText = {
-  'pt': r'Gráficos de s(t) filtrado',
+  'pt': r'Gráficos da s(t) Filtrada',
   'en': 'Graph for Filtered s(t)'
 };
 
@@ -187,3 +187,10 @@ const kThirdPartyLibs = {
   'pt': 'Bibliotecas de Terceiros',
   'en': 'Third Party Libraries'
 };
+
+const kSomePointIsInvalid = {
+  'pt': 'Algum ponto está inválido!',
+  'en': 'Some point is invalid!'
+};
+
+const kFilterText = {'pt': 's(t) Filtrada', 'en': 'Filtered s(t)'};

@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ifs/math/linear_space.dart';
+import 'package:ifs/widgets/coefficients_list_view.dart';
+import 'package:ifs/widgets/content_page.dart';
 import 'package:ifs/widgets/line_chart.dart';
 import 'package:ifs/widgets/piecewise_function_display.dart';
 
@@ -21,7 +23,9 @@ class FunctionOutputPage extends StatefulWidget {
   _FunctionOutputPageState createState() => _FunctionOutputPageState();
 }
 
-class _FunctionOutputPageState extends State<FunctionOutputPage> {
+class _FunctionOutputPageState extends State<FunctionOutputPage>
+    with SingleTickerProviderStateMixin {
+  TabController _tabController;
   LinearSpace functionsSpace;
   String _language;
   FourierSeries _trigonometricFourierSeries;
@@ -39,8 +43,6 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
       _cData,
       _omegaData;
 
-  int _page = 1;
-
   static FourierSeries _compute(List args) {
     return FourierSeries.evaluate(
       args[0],
@@ -50,10 +52,15 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
   }
 
   @override
+  void initState() {
+    _tabController = TabController(initialIndex: 0, length: 5, vsync: this);
+    super.initState();
+  }
+
+  @override
   Future<void> didChangeDependencies() async {
     if (_init) {
       try {
-        _language = getLocationCode(context);
         final data = ModalRoute.of(context).settings.arguments as List;
         _start = data[0][0];
         _end = data[0][1];
@@ -127,7 +134,7 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
           });
         });
       } catch (e) {
-        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        print(e);
       }
     }
 
@@ -136,98 +143,82 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
 
   @override
   Widget build(BuildContext context) {
+    _language = getLocationCode(context);
+
     return CustomScaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(kCalculatorResultName[_language]),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelPadding: EdgeInsets.symmetric(horizontal: 32),
+          tabs: [
+            Tab(
+              text: 's(t) Info',
+              icon: Container(),
+            ),
+            Tab(
+              text: 'x(t) s(t) Charts',
+              icon: Container(),
+            ),
+            Tab(
+              text: kFilterText[_language],
+              icon: Container(),
+            ),
+            Tab(
+              text: 'A[n] B[n] Charts',
+              icon: Container(),
+            ),
+            Tab(
+              text: 'A[n] B[n] List',
+              icon: Container(),
+            ),
+          ],
+        ),
       ),
       body: _init
           ? Center(
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                CupertinoActivityIndicator(),
-                Text(kWaitingForCalculationText[_language])
-              ],
-            ))
-          : ListView(
-              padding: EdgeInsets.all(20),
-              children: _page == 0
-                  ? [
-                      _buildFirstPage(),
-                      _buildSecondPage(),
-                    ]
-                  : [
-                      _buildThirdPage(),
-                      _buildForthPage(),
-                    ],
-            ),
-      bottomNavigationBar: !_init
-          ? BottomNavigationBar(
-              currentIndex: _page,
-              onTap: (int index) {
-                if (_page == index) return;
-                setState(() => _page = index);
-              },
-              items: [
-                BottomNavigationBarItem(
-                  label: '1',
-                  icon: Text(
-                    'x(t)',
-                    style: TextStyle(
-                        fontStyle: FontStyle.italic, color: Colors.pink),
-                  ),
-                ),
-                BottomNavigationBarItem(
-                  label: '2',
-                  icon: Icon(
-                    Icons.show_chart,
-                    color: Colors.pink,
-                  ),
-                ),
-              ],
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  CupertinoActivityIndicator(),
+                  Text(kWaitingForCalculationText[_language])
+                ],
+              ),
             )
-          : null,
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildFirstPage(),
+                _buildSecondPage(),
+                _buildThirdPage(),
+                _buildForthPage(),
+                _buildFifthPage(),
+              ],
+            ),
     );
   }
 
   Widget _buildFirstPage() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            kInputDataText[_language],
-            style: Theme.of(context).textTheme.title,
-          ),
-        ),
-        Card(
-          elevation: 2,
-          clipBehavior: Clip.hardEdge,
-          child: PiecewiseFunctionDisplay(_piecewiseFunction),
-        ),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: ContentPage(
+        title: kInputDataText[_language],
+        content: PiecewiseFunctionDisplay(_piecewiseFunction),
+      ),
     );
   }
 
   Widget _buildSecondPage() {
-    return Card(
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              kTFGraphsText[_language],
-              style: Theme.of(context).textTheme.title,
-            ),
-          ),
-          Card(
-            elevation: 2,
-            clipBehavior: Clip.hardEdge,
-            child: LineChart(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: ContentPage(
+        title: kTFGraphsText[_language],
+        content: Card(
+          child: LayoutBuilder(
+            builder: (context, constraints) => LineChart(
+              size: Size(constraints.maxWidth, constraints.maxWidth) * 0.9,
               boundaries: ChartBoundaries(
                 maxY: _maxY,
                 minY: -_maxY,
@@ -244,28 +235,21 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildThirdPage() {
-    return Card(
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              kTFilteredText[_language],
-              style: Theme.of(context).textTheme.title,
-            ),
-          ),
-          Card(
-            elevation: 2,
-            clipBehavior: Clip.hardEdge,
-            child: LineChart(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: ContentPage(
+        title: kTFilteredText[_language],
+        content: Card(
+          clipBehavior: Clip.hardEdge,
+          child: LayoutBuilder(
+            builder: (context, constraints) => LineChart(
+              size: Size(constraints.maxWidth, constraints.maxWidth) * 0.9,
               boundaries: ChartBoundaries(
                 maxY: _maxY,
                 minY: -_maxY,
@@ -280,89 +264,34 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: RangeSlider(
-              activeColor: Colors.black,
-              inactiveColor: Colors.blueGrey,
-              min: 0,
-              max: (_trigonometricFourierSeries.aCoefficients.length - 1)
-                  .toDouble(),
-              values: _harmonicFilter,
-              labels: _labelGenerator(_harmonicFilter),
-              divisions: (_trigonometricFourierSeries.aCoefficients.length - 1),
-              onChanged: (value) => setState(() {
-                _harmonicFilter = value;
-              }),
-              onChangeEnd: _updateFilteredChart,
-            ),
-          ),
-        ],
+        ),
+        subContent: RangeSlider(
+          activeColor: Colors.black,
+          inactiveColor: Colors.blueGrey,
+          min: 0,
+          max:
+              (_trigonometricFourierSeries.aCoefficients.length - 1).toDouble(),
+          values: _harmonicFilter,
+          labels: _labelGenerator(_harmonicFilter),
+          divisions: (_trigonometricFourierSeries.aCoefficients.length - 1),
+          onChanged: (value) => setState(() {
+            _harmonicFilter = value;
+          }),
+          onChangeEnd: _updateFilteredChart,
+        ),
       ),
     );
   }
 
   Widget _buildForthPage() {
-    return Card(
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  kFrequencySpectrumText[_language],
-                  style: Theme.of(context).textTheme.title,
-                ),
-                FlatButton(
-                  child: Text(kViewChartText[_language]),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext context) => AlertDialog(
-                        title: Text(kFrequencyChartTitleText[_language]),
-                        content: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              for (int i = 0;
-                                  i <
-                                      _trigonometricFourierSeries
-                                          .aCoefficients.length;
-                                  i++)
-                                Text(
-                                    'A$i = ${_trigonometricFourierSeries.aCoefficients[i].toStringAsFixed(3)}'
-                                    '\nB$i = ${_trigonometricFourierSeries.bCoefficients[i].toStringAsFixed(3)}'
-                                    '\n|C|$i = ${_trigonometricFourierSeries.magnitudeCoefficients[i].toStringAsFixed(3)}'
-                                    '\n∠C$i = ${_trigonometricFourierSeries.phaseCoefficients[i].toStringAsFixed(3)} rad '
-                                    '(${(_trigonometricFourierSeries.phaseCoefficients[i] * 180 / pi).toStringAsFixed(3)}°)\n')
-                            ],
-                          ),
-                        ),
-                        actions: <Widget>[
-                          FlatButton(
-                            child: Text('Ok'),
-                            textColor: Colors.black,
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                )
-              ],
-            ),
-          ),
-          Card(
-            elevation: 2,
-            //     clipBehavior: Clip.hardEdge,
-            child: LineChart(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: ContentPage(
+        title: kFrequencySpectrumText[_language],
+        content: Card(
+          child: LayoutBuilder(
+            builder: (context, constraints) => LineChart(
+              size: Size(constraints.maxWidth, constraints.maxWidth) * 0.9,
               boundaries: ChartBoundaries(
                 maxY: _trigonometricFourierSeries.higherAmplitude * 1.1,
                 minY: -_trigonometricFourierSeries.higherAmplitude * 1.1,
@@ -383,30 +312,40 @@ class _FunctionOutputPageState extends State<FunctionOutputPage> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CupertinoSlidingSegmentedControl<SpectrumView>(
-              children: {
-                SpectrumView.An: buildCaTeX(
-                  r'A_n',
-                  context,
-                ),
-                SpectrumView.Bn: buildCaTeX(
-                  r'B_n',
-                  context,
-                ),
-                SpectrumView.Amplitude: buildCaTeX(
-                  r'\sqrt{A_n^2+B_n^2}',
-                  context,
-                ),
-              },
-              groupValue: _spectrumView,
-              onValueChanged: (value) => setState(
-                () => _spectrumView = value,
-              ),
+        ),
+        subContent: CupertinoSlidingSegmentedControl<SpectrumView>(
+          children: {
+            SpectrumView.An: buildCaTeX(
+              r'A_n',
+              context,
             ),
+            SpectrumView.Bn: buildCaTeX(
+              r'B_n',
+              context,
+            ),
+            SpectrumView.Amplitude: buildCaTeX(
+              r'\sqrt{A_n^2+B_n^2}',
+              context,
+            ),
+          },
+          groupValue: _spectrumView,
+          onValueChanged: (value) => setState(
+            () => _spectrumView = value,
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFifthPage() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+      child: ContentPage(
+        withPadding: false,
+        title: kFrequencySpectrumText[_language],
+        content: Flexible(
+          child: CoefficientsListView(_trigonometricFourierSeries),
+        ),
       ),
     );
   }
